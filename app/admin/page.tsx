@@ -1,15 +1,5 @@
-import Image from "next/image";
-import AdminHome from "./adminHome";
-// import AdminLogin from "@/app/admin/adminLogin";
-// import AdminHome from "./adminHome";
-// import AdminHome from "./admin/adminHome";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return (
-  <div >
-    <AdminHome/>
-    {/* <AdminLogin/>
-    <AdminHome/> */}
-  </div>
-  );
+export default function AdminPage() {
+  redirect("/admin/login");
 }
