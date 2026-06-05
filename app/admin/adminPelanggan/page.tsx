@@ -17,7 +17,7 @@ const page = () => {
     <div className='w-full flex flex-col'>
     <div className='w-full h-15  flex flex-row mt-5 justify-between px-5 '>
        <h1 className='font-extrabold text-2xl text-[#2A4AA1]'>Menu Pelanggan</h1>
-       <div className='flex flex-row gap-2'>
+       <div className='flex flex-row gap-2 text-white'>
         <button className='flex flex-row justify-center items-center gap-2 w-40 h-10 bg-[#2A4AA1] rounded-lg ml-80'>
           <Image
            src="/assets/image/pipel.png"

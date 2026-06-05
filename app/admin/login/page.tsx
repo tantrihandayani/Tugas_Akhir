@@ -1,21 +1,47 @@
 "use client";
 
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from "next/navigation";
 
 export default function AdminLogin() {
   const router = useRouter();
 
-  const handleLogin = () => {
-    // nanti bisa ditambah validasi login di sini
-    router.push("/admin/adminHome");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/login/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Login berhasil");
+        router.push("/admin/adminHome");
+      } else {
+        alert(data.message);
+      }
+
+    } catch (error) {
+      console.error(error);
+      alert("Server error");
+    }
   };
 
   return (
     <div className='w-full h-screen flex flex-col items-center justify-between bg-white'>
-      
-      <div className='w-120 flex flex-col gap-4 items-center mt-10 justify-between'>
+    
+      <div className='w-120 flex flex-col gap-5 items-center mt-10 justify-between'>
         <Image 
           src="/assets/image/logo.png"
           width={200}
@@ -23,33 +49,43 @@ export default function AdminLogin() {
           alt="Logo"
         /> 
         
-        <p className='text-blue-900 font-bold h-2 text-sm mr-92'>Username/Email</p>
-        <input 
-          type="text"
-          className='w-120 h-13 p-2 pl-3 border-2 text-blue-900 border-blue-900 rounded-2xl placeholder:italic '
-          placeholder='Masukkan email atau username'
-        />
-         
-        <p className='text-blue-900 font-bold h-2 text-sm pr-102'>Password</p>
-        <input 
-          type="password"
-          className='w-120 h-13 p-2 pl-3 border-2 text-blue-900 border-blue-900 rounded-2xl placeholder:italic '
-          placeholder='Masukkan password'
-        />
+          <div className='flex flex-col gap-4  '>
+          <p className='text-blue-900 font-bold h-2 text-sm ml-2'>Username</p>
+          <input 
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className='w-120 h-13 p-2 pl-3 border-2 text-blue-900 border-blue-900 rounded-2xl'
+            placeholder='Masukkan username'
+          />
+          </div>
 
-        <div className='w-120 flex flex-row justify-between '>
-          <button className='hover:underline w-50 text-left italic text-blue-800 text-[8px]'>
-            Hubungi admin jika lupa akun!
-          </button>
+          <div className='flex flex-col gap-4  '>
+          <p className='text-blue-900 font-bold h-2 text-sm ml-2'>Password</p>
+          <input 
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className='w-120 h-13 p-2 pl-3 border-2 text-blue-900 border-blue-900 rounded-2xl'
+            placeholder='Masukkan password'
+          />
+          </div>
 
-          <button 
-            className='w-30 rounded-lg font-bold bg-blue-900 text-center hover:bg-blue-700 text-white'
-            onClick={handleLogin}
-          > 
-            LOGIN
-          </button>
+          <div className='w-120 flex flex-row justify-between '>
+            <button className='hover:underline w-50 text-left -mt-5 italic text-blue-800 text-[8px]'>
+              Hubungi admin jika lupa akun!
+            </button>
+
+            <button 
+              className='w-30 rounded-lg font-bold bg-blue-900 text-center hover:bg-blue-700 text-white'
+              onClick={handleLogin}
+            > 
+              LOGIN
+            </button>
         </div>
+        
       </div>
     </div>
+
   )
 }

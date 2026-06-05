@@ -5,138 +5,158 @@ import Navbar from '@/component/navbar'
 import Booking from '@/component/booking'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { bookingData } from '@/lib/data/data_booking'
+import { BookingType } from "@/type/bookingType";
+import AddBooking from '@/component/addBooking'
 
 
 const AdminBooking = () => {
 
 const [openTambah, setOpenTambah] = useState(false)
-const [jam, setJam] = useState('');
-const [hari, setHari] = useState('');
 const [showSucces, setShowSucces] = useState(false);
-const [paket, setPaket] = useState('');
+const [searchTanggal, setSearchTanggal] = useState('');
+const [bookingList, setBookingList] = useState<BookingType[]>([]);
+const [selectedBooking, setSelectedBooking] = useState<BookingType | null>(null);
 
-const resetForm = () => {
-  setHari('');
-  setJam('');
-  setPaket('');
-};
-
-const closePopup = () => {
-  setOpenTambah(false);
-  resetForm();
-};
-
-const getNextDays = () => {
-  const days = []
-  const namaHari = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"]
-
-  for (let i = 0; i < 7; i++) {
-    const date = new Date()
-    date.setDate(date.getDate() + i)
-
-    days.push({
-      label: `${namaHari[date.getDay()]} (${date.getDate()}/${date.getMonth()+1})`,
-      value: date.toISOString().split("T")[0]
-    })
-  }
-  return days
-}
-
-const jamList = [
-  "10:00","10:30","11:00","11:30",
-  "13:00","13:30","14:00","14:30",
-  "15:00","15:30","16:00","16:30",
-  "17:00","17:30","18:00","18:30",
-  "19:00","19:30","20:00","20:30"
-];
-
-const handleSimpan = () => {
-  // validasi dulu
-  if (!hari || !jam || !paket) {
-  alert("Lengkapi semua data dulu!");
-  return;
-  }
-
-  // simulasi simpan data (nanti bisa ke API / database)
-  const dataBooking = {
-    hari,
-    jam,
-    paket,
+  const handleUpdateStatus = async (newStatus: string) => {
+    if (!selectedBooking) return;
+    await fetch(
+      `http://127.0.0.1:8000/api/booking/${selectedBooking.id}/`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          booking_status: newStatus,
+        }),
+      }
+    );
+    const updated = bookingList.map((item) =>
+      item.id === selectedBooking.id
+        ? { ...item, status: newStatus }
+        : item
+    );
+    setBookingList(updated);
+    setSelectedBooking({
+      ...selectedBooking,
+      status: newStatus,
+    });
   };
+  
+  const formatTimeRange = (jam?: string) => {
+  if (!jam) return "-";
 
-  console.log("Data tersimpan:", dataBooking);
+  const clean = jam.slice(0, 5); // 
+  const [h, m] = clean.split(":").map(Number);
 
-  // munculin popup sukses
-  closePopup();
-  setShowSucces(true);  // tampilkan popup sukses
-};
+  const end = new Date();
+  end.setHours(h);
+  end.setMinutes(m + 30);
+
+  const endH = String(end.getHours()).padStart(2, "0");
+  const endM = String(end.getMinutes()).padStart(2, "0");
+
+  return `${clean.replace(":", ".")} - ${endH}.${endM}`;
+}; 
 
 useEffect(() => {
-  const available = getAvailableJam();
-  if (!available.includes(jam)) {
-    setJam('');
-  }
-}, [hari]);
+  fetch("http://127.0.0.1:8000/api/booking/")
+    .then((res) => res.json())
+    .then((data) => {
 
-const getAvailableJam = () => {
-  if (!hari) return jamList;
+      const normalized = data.map((item: any) => ({
+        id: item.id,
+        customer_name: item.nama,
+        nomor_hp: item.nomor_hp,
+        date: item.date,
+        time: item.time,
+        package_name: item.package_name,
+        payment_method: item.payment_method,
+        deskripsi: item.deskripsi,
+        status: item.booking_status,
+      }));
 
-  const today = new Date().toISOString().split("T")[0];
+      setBookingList(normalized);
+    })
+    .catch((err) => console.error(err));
+}, []);
 
-  // kalau bukan hari ini → semua jam boleh
-  if (hari !== today) return jamList;
-
+const getTodayLocal = () => {
   const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-
-  return jamList.filter((jamItem) => {
-    const [hour, minute] = jamItem.split(":").map(Number);
-
-    return (
-      hour > currentHour ||
-      (hour === currentHour && minute > currentMinute)
-    );
-  });
+  const offset = now.getTimezoneOffset();
+  const local = new Date(now.getTime() - offset * 60000);
+  return local.toISOString().split("T")[0];
 };
 
-const hariList = getNextDays()
-
-const paketList = [
-  { nama: "Basic", durasi: "30 menit" },
-  { nama: "Premium", durasi: "1 jam" },
-  { nama: "Prewedding", durasi: "2 jam" },
-  { nama: "Wisuda", durasi: "45 menit" },
-];
+const today = getTodayLocal();
 
 
+const uniqueDates = [
+  ...new Set(bookingList.map(item => item.date))
+  ].sort((a, b) => {
+    if (a === today) return -1;
+    if (b === today) return 1;
+    return new Date(b).getTime() - new Date(a).getTime();
+  });
+
+const refreshBooking = async () => {
+  try {
+    const refresh = await fetch(
+      "http://127.0.0.1:8000/api/booking/"
+    );
+
+    const updated = await refresh.json();
+
+      const normalized = updated.map((item: any) => ({
+        id: item.id,
+        customer_name: item.nama,
+        nomor_hp: item.nomor_hp,
+        date: item.date,
+        time: item.time,
+        package_name: item.package_name,
+        payment_method: item.payment_method,
+        deskripsi: item.deskripsi,
+        status: item.booking_status,
+      }));
+
+      setBookingList(normalized);
+      setShowSucces(true);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
-    <div className='w-full flex flex-row  gap-10 bg-white'>
+    <div className='w-full min-h-screen flex bg-white'>
         <Navbar />
         
-        <div className='w-full  flex flex-col mt-5'>
-          <div className='flex flex-row '>
+        <div className='flex-1 flex-col justify-center'>
+          <div className='w-full flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mt-5 px-4 md:px-6'>
             <h1 className='font-extrabold text-2xl text-[#2A4AA1]'>Menu Booking</h1>
-            <div className='flex flex-row gap-2'>
-            <button className='flex flex-row justify-center items-center gap-2 w-40 h-10 bg-[#2A4AA1] rounded-lg ml-80'>
+            <div className='flex flex-col sm:flex-row gap-3 w-full lg:w-auto'>
+            <div className='flex flex-row items-center gap-2 w-full sm:w-44 h-10 bg-[#2A4AA1] rounded-lg px-3'>
               <Image
-              src="/assets/image/date.png"
-              className='w-7 h-7 '
-              width={25}
-              height={25}
-              alt='logo'
+                src="/assets/image/date.png"
+                className='w-6 h-6'
+                width={25}
+                height={25}
+                alt='logo'
               />
-              <p className='font-bold text-[15px]'>Cari Tanggal</p>
-            </button>
+
+              <input
+                type="date"
+                value={searchTanggal}
+                onChange={(e) => setSearchTanggal(e.target.value)}
+                className='bg-transparent text-white outline-none text-sm w-25 appearance-none [-webkit-appearance:none]
+                [&::-webkit-calendar-picker-indicator]:opacity-0  [&::-webkit-calendar-picker-indicator]:absolute cursor-pointer'
+              />       
+            </div>
 
             <button 
             onClick={() => {
               setOpenTambah(true);
             }}
-            className='flex flex-row justify-center items-center gap-2 w-45 h-10 bg-[#2A4AA1] rounded-lg '>
-              
+            className='flex flex-row justify-center items-center gap-2 w-full sm:w-52 h-10 shrink-0 bg-[#2A4AA1] rounded-lg'>
               <Image
               src="/assets/image/add.png"
               className='w-7 h-7 '
@@ -144,180 +164,64 @@ const paketList = [
               height={25}
               alt='logo'
               />
-              <p className='font-bold text-[15px]'>Tambah Booking</p>
+              <p className='text-white font-bold text-[15px]'>Tambah Booking</p>
             </button>
-            </div>
-
+            </div>  
           </div>
-      <div className='w-full h-135 overflow-y-auto '>
-        <div>
-          <h1 className='text-[#2A4AA1] font-bold mb-3 mt-5'>Booking Hari Ini :</h1>
-          <div className='flex flex-col gap-4'>
-            {bookingData.map((item,index)=>{
-              return(
-                <Booking 
-                  key={index}
-                  date={item.date}
-                  name={item.name}
-                  id={item.id}
-                  packageName={item.packageName}
-                  status={item.status}
-                  time={item.time}
-                />
-              )
-            })}
-          </div>
-        </div>
+      
+        <div className='w-full max-h-[90vh] overflow-y-auto pb-10'>
+          {uniqueDates.map((date, idx) => {
+            if (searchTanggal && date !== searchTanggal) return null;
+            return (
+              <div key={date}>
+                <h1 className='text-[#2A4AA1]  mb-3 mt-8 px-3 md:px-8 font-extrabold underline'>
+                  {date === today 
+                    ? "Booking Hari Ini :" 
+                    : `Booking ${date} :`}
+                </h1>
 
-        <div className="w-210 h-[2px] rounded-lg  bg-[#2A4AA1]/50 my-4 mt-10  "></div>
-
-        <div>
-          <h1 className='text-[#2A4AA1] font-bold mb-3 mt-5'>Booking 17/02/2026 :</h1>
-          <div className='flex flex-col gap-4'>
-          {bookingData.map((item,index)=>{
-              return(
-                <Booking 
-                  key={index}
-                  date={item.date}
-                  name={item.name}
-                  id={item.id}
-                  packageName={item.packageName}
-                  status={item.status}
-                  time={item.time}
-                />
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="w-210 h-[2px] rounded-lg  bg-[#2A4AA1]/50 my-4 mt-10  "></div>
-
-        <div className='mb-10'>
-          <h1 className='text-[#2A4AA1] font-bold mb-3 mt-5'>Booking 17/02/2026 :</h1>
-          <div className='flex flex-col gap-4'>
-          {bookingData.map((item,index)=>{
-              return(
-                <Booking 
-                  key={index}
-                  date={item.date}
-                  name={item.name}
-                  id={item.id}
-                  packageName={item.packageName}
-                  status={item.status}
-                  time={item.time}
-                />
-              )
-            })}
-          </div>
-        </div>
-      </div>
-        </div>
-
-      {openTambah && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] z-50"> 
-         {/* POP UP TAMBAH BOOKING */}
-          <div className="flex flex-col bg-white w-150 h-110 rounded-xl shadow-xl">
-            <div className='flex flex-row '> 
-            <h1 className=" text-xl font-extrabold text-[#2A4AA1] ml-6 mb-3 mt-3">
-              Tambah Booking
-            </h1>
-
-            <button
-              onClick={closePopup}
-            >
-              <Image
-                src="/assets/image/add.png"
-                className='w-10 h-10 ml-87 rounded-full bg-[#2A4AA1]' 
-                width={20}
-                height={20}
-                alt='Logo'
-              />
-            </button>
-            </div>
-            
-            <div className='flex flex-col gap-3 items-center mt-3'>
-              <input type="text"
-              className='w-130 h-10 bg-[#B0C5FF] border-1 border-[#2A4AA1] rounded-[20px] pl-5 placeholder-[#2A4AA1]  '
-              placeholder='Nama Pelanggan' />
-              <input type="text"
-              className='w-130 h-10 bg-[#B0C5FF] border-1 border-[#2A4AA1] rounded-[20px] pl-5 placeholder-[#2A4AA1]  '
-              placeholder='Nomor Hp' />
-              <div className="flex flex-col gap-1 w-130">
-
-                <select
-                  value={paket}
-                  onChange={(e) => setPaket(e.target.value)}
-                  className={`h-10 bg-[#B0C5FF] border-1 border-[#2A4AA1] rounded-[20px] px-4 text-[#2A4AA1]`}
-                >
-                  <option value="" disabled>
-                    Pilih Paket Foto
-                  </option>
-
-                  {paketList.map((item, i) => (
-                    <option key={i} value={item.nama}>
-                      {item.nama} - {item.durasi}
-                    </option>
-                  ))}
-                </select>
+                <div className='flex flex-col gap-4 w-full'>
+                  {bookingList
+                    .filter(item => item.date === date)
+                    .sort((a, b) => {
+                      return (
+                      new Date(`1970-01-01T${a.time}`).getTime() -
+                      new Date(`1970-01-01T${b.time}`).getTime()
+                    );
+                    })
+                    .map((item) => (
+                      <div 
+                        key={item.id}
+                        onClick={() => {
+                          console.log(item); 
+                          setSelectedBooking(item);
+                        }}
+                      >
+                      <Booking
+                        
+                        date={item.date}
+                        customer_name={item.customer_name}
+                        id={item.id}
+                        package_name={item.package_name}
+                        payment_method={item.payment_method} 
+                        status={item.status}
+                        time={formatTimeRange(item.time)}
+                        className="w-full"
+                      />
+                      </div>
+                    ))}
+                </div>
               </div>
-              <div className='flex flex-row gap-4 '> 
-                <select
-                  value={hari}
-                  onChange={(e) => setHari(e.target.value)}
-                  className='w-63 h-10 bg-[#B0C5FF] border border-[#2A4AA1] rounded-[20px] px-4 text-[#2A4AA1]'
-                >
-                  <option value="" disabled >Pilih Hari</option>
-                  {hariList.map((item, i) => (
-                    <option key={i} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={jam}
-                  onChange={(e) => setJam(e.target.value)}
-                  className='w-63 h-10 bg-[#B0C5FF] border border-[#2A4AA1] rounded-[20px] px-4 text-[#2A4AA1]'
-                >
-                  <option value="">Pilih Jam</option>
-                  {jamList.map((item, index) => {
-                  const isDisabled = !getAvailableJam().includes(item);
-
-                  return (
-                    <option key={index} value={item} disabled={isDisabled}>
-                      {item} {isDisabled ? "(Lewat)" : ""}
-                    </option>
-                  );
-                })}
-                </select>
-              </div>
-              <input type="text"
-              className=' w-130 h-20 bg-[#B0C5FF] border-1 border-[#2A4AA1] rounded-[20px] pl-5 placeholder-[#2A4AA1] placeholder- '
-              placeholder='Deskripsi' />
-            </div>
-
-           <div className="w-130 flex justify-between ml-10 gap-3 mt-5 mr-5">
-              {/* BATAL */}
-              <button
-                onClick={closePopup}
-                className="w-30 h-8  rounded-[20px] border border-[#2A4AA1] text-[#2A4AA1] hover:bg-[#2A4AA1]/10 transition"
-              >
-                Batal
-              </button>
-              {/* SIMPAN */}
-              <button
-                onClick={handleSimpan}
-                disabled={!hari || !jam || !paket}
-                className={`w-30 h-8 rounded-[20px] text-white font-semibold shadow-md transition
-                ${(!hari || !jam || !paket) 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-[#2A4AA1] hover:bg-[#1f3a87]'}`}
-              >
-                Simpan
-              </button>
-          </div>
-          </div>
+            );
+          })}
         </div>
-        )}
+     </div>
+
+        <AddBooking
+          open={openTambah}
+          onClose={() => setOpenTambah(false)}
+          onSuccess={refreshBooking}
+        />
 
         <div
           className={`fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-[2px] z-50 
@@ -325,19 +229,28 @@ const paketList = [
           ${showSucces ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
           >
           <div
-            className={`bg-white w-96 h-70 rounded-2xl border border-blue-500 shadow-md shadow-blue-800 text-center relative 
-            transform transition-all duration-300 ease-out
-            ${showSucces ? 'scale-100 opacity-100' : 'scale-90 opacity-0'}`}
+            className={`bg-white w-[90%] max-w-md min-h-[280px] rounded-2xl border
+              border-blue-500 shadow-md shadow-blue-800 text-center 
+              transform transition-all duration-300 ease-out
+              ${showSucces ? 'scale-100 opacity-100' : 'scale-90 opacity-0'}`}
           >
-            <button
-              onClick={() => setShowSucces(false)}
-              className="absolute top-2 right-3 text-xl text-[#2A4AA1]"
-            >
-              ✕
-            </button>
-            <h2 className="font-extrabold text-[#2A4AA1] text-lg mb-4 mt-3 ml-4 text-start">
+            <div className='flex justify-between items-center px-5 py-4'>
+            <h2 className="font-extrabold text-[#2A4AA1] text-lg  text-start">
               Tambah Booking
             </h2>
+            <button
+              onClick={() => setShowSucces(false)}
+              className=""
+            >
+              <Image
+                src="/assets/image/close.png"
+                width={24}
+                height={24}
+                alt="Close"
+                className="mx-auto"
+              />
+            </button>
+            </div>
             <div className='p-5 flex justify-center items-center'>
               <Image
                 src="/assets/image/success.png"
@@ -347,12 +260,111 @@ const paketList = [
                 alt='Logo'
               />
             </div>
-            <p className="font-semibold text-blue-900">
+            <p className="font-extrabold text-blue-900">
               Booking Sukses!
             </p>
           </div>
         </div>
 
+        {selectedBooking && (
+          <div 
+            className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]"
+            onClick={() => setSelectedBooking(null)}
+          >
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white w-[95%] max-w-2xl rounded-2xl p-4 md:p-6 relative shadow-xl"
+            >
+              <button
+                onClick={() => setSelectedBooking(null)}
+                className="absolute top-3 right-3"
+              >
+                <Image
+                  src="/assets/image/close.png"
+                  width={20}
+                  height={20}
+                  alt="close"
+                />
+              </button>
+
+              {/* KANAN */}
+              <div className="flex flex-col justify-between">
+
+                {/* HEADER */}
+                <div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-xl font-bold text-[#2A4AA1]">
+                        {selectedBooking.customer_name}
+                      </h2>
+                      <p className="text-[#2A4AA1] text-sm">
+                        {selectedBooking.payment_method}
+                      </p>
+                    </div>
+
+                    {/* STATUS */}
+                    <div className={`px-3 py-1 mr-4 rounded-lg text-white text-sm
+                     ${selectedBooking.status === 'waiting' ? 'bg-yellow-500' : ''}
+                     ${selectedBooking.status === 'progress' ? 'bg-orange-500' : ''}
+                     ${selectedBooking.status === 'finished' ? 'bg-green-500' : ''}
+                    `}>
+                      {selectedBooking.status}
+                    </div>
+                  </div>
+
+                  <hr className="my-4 border-dashed border-[#2A4AA1]" />
+
+                  {/* DETAIL */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 text-[#2A4AA1] text-sm mt-4">
+
+                    <p className="font-semibold">ID Booking :</p>
+                    <p>#{selectedBooking.id}</p>
+
+                    <p className="font-semibold">Nama :</p>
+                    <p>{selectedBooking.customer_name}</p>
+
+                    <p className="font-semibold">Nomor HP :</p>
+                    <p>{selectedBooking.nomor_hp || '-'}</p>
+
+                    <p className="font-semibold">Tanggal :</p>
+                    <p>{selectedBooking.date}</p>
+
+                    <p className="font-semibold">Jam :</p>
+                    <p>{formatTimeRange(selectedBooking.time)}</p>
+
+                    <p className="font-semibold">Paket :</p>
+                    <p>{selectedBooking.package_name}</p>
+
+                    <p className="font-semibold">Pembayaran :</p>
+                    <p>{selectedBooking.payment_method}</p>
+
+                    <p className="font-semibold">Deskripsi :</p>
+                    <p className="break-words whitespace-pre-wrap">
+                      {selectedBooking.deskripsi || '-'}
+                    </p>
+                  </div>
+
+                {/* BUTTON */}
+                <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
+                  <button
+                    onClick={() => handleUpdateStatus("progress")}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg"
+                  >
+                    Start
+                  </button>
+
+                  <button
+                    onClick={() => handleUpdateStatus("finished")}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg"
+                  >
+                    Finish
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+        )}
     </div>
     
   )

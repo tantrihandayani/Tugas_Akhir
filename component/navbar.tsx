@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 export default function Navbar() {
     return (
-        <div className='fix w-80 h-150 bg-[#2A4AA1] rounded-r-lg'>
-                <div className='w-80  flex flex-row pt-5 ml-5  '>
+        <div className='w-64 md:w-70 min-h-screen bg-[#2A4AA1] rounded-r-lg text-white flex flex-col'>
+                <div className='flex items-center justify-between px-4 pt-5'>
                   <Image 
                   src="/assets/image/profile.png"
                   width={50}
@@ -15,7 +15,7 @@ export default function Navbar() {
                     <p className='font-bold'>Tantri Handayani</p>
                     <p className='text-[10px]'>Admin 1</p>
                   </div>
-                  <button className='ml-17 mb-3'>
+                  <button className='ml-10 mb-3'>
                   <Image
                   src="/assets/image/edit.png"
                   width={20}

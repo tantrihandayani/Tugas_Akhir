@@ -2,37 +2,42 @@
 
 import { useState, useEffect } from "react";
 
-export default function AddKategori({ isOpen, onClose, mode = "tambah", data }) {
+export default function AddKategori({ isOpen, onClose, mode = "tambah", data, onSubmit }) {
 
-  const [image, setImage] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [nama, setNama] = useState("");
   const [harga, setHarga] = useState("");
   const [waktu, setWaktu] = useState("");
-  const [desc, setDesc] = useState("");
+  const [description, setDescription] = useState("");
 
 
 
     const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    const imageUrl = URL.createObjectURL(file);
-    setImage(imageUrl);
+      setImageFile(file);
+
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
     };
 
     useEffect(() => {
-    return () => {
-        if (image) URL.revokeObjectURL(image);
-    };
-    }, [image]);
+      return () => {
+        if (imagePreview?.startsWith("blob:")) {
+          URL.revokeObjectURL(imagePreview);
+        }
+      };
+    }, [imagePreview]);
 
     useEffect(() => {
     if (mode === "edit" && data) {
         setNama(data.title);
         setHarga(data.price);
         setWaktu(data.duration);
-        setDesc(data.desc);
-        setImage(data.image);
+        setDescription(data.description);
+        setImagePreview(`http://127.0.0.1:8000${data.image}`);
     }
     }, [data, mode]);
 
@@ -41,8 +46,9 @@ export default function AddKategori({ isOpen, onClose, mode = "tambah", data }) 
         setNama("");
         setHarga("");
         setWaktu("");
-        setDesc("");
-        setImage(null);
+        setDescription("");
+        setImagePreview(null);
+        setImageFile(null);
     }
     }, [isOpen]);
 
@@ -63,27 +69,35 @@ export default function AddKategori({ isOpen, onClose, mode = "tambah", data }) 
         </button>
         {/* UPLOAD */}
         <div className="border-2 border-dashed border-gray-400 rounded-xl h-40 flex items-center justify-center mb-5">
-          {image ? (
-            <img 
-            src={image} 
-            alt="preview" 
-            className="w-full h-full object-cover rounded-xl"
-            />
+          {imagePreview ? (
+            <div className="flex items-center gap-3 w-full h-full">
+              <img 
+                src={imagePreview} 
+                alt="preview" 
+                className="w-32 h-32 object-cover rounded-xl"
+              />
+
+              <input 
+                type="file" 
+                accept="image/*"
+                onChange={handleImageChange}
+                className="border w-40 border-[#002381] p-2 rounded-md"
+              />
+            </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
-            <input 
+              <input 
                 type="file" 
                 accept="image/*"
                 onChange={handleImageChange}
                 className="border w-60 border-[#002381] p-2 rounded-md"
-            />
-            <p className="text-sm font-semibold text-[#002381]">
+              />
+              <p className="text-sm font-semibold text-[#002381]">
                 Tambahkan Gambar Kategori
-            </p>
+              </p>
             </div>
           )}
-
-</div>
+        </div>
 
         {/* INPUT */}
         <div className="flex flex-col gap-3">
@@ -100,14 +114,14 @@ export default function AddKategori({ isOpen, onClose, mode = "tambah", data }) 
 
           <div className="flex gap-3">
             <input 
-            value={harga}
+            value={harga || ""}
             onChange={(e) => setHarga(e.target.value)}
             placeholder="Harga"
             className="w-full p-2 placeholder:text-black/20 placeholder:italic placeholder:text-sm text-[#002381] rounded-lg bg-[#AFCBFF] shadow-md outline-none"
             />
 
             <input 
-            value={waktu}
+            value={waktu || ""}
             onChange={(e) => setWaktu(e.target.value)}
             placeholder="Waktu"
             className="w-full p-2 placeholder:text-black/20 placeholder:italic placeholder:text-sm text-[#002381] rounded-lg bg-[#AFCBFF] shadow-md outline-none"
@@ -115,8 +129,8 @@ export default function AddKategori({ isOpen, onClose, mode = "tambah", data }) 
           </div>
 
           <textarea 
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             placeholder="Deskripsi"
             className="w-full p-2 placeholder:text-black/20 placeholder:italic placeholder:text-sm text-[#002381] rounded-lg bg-[#AFCBFF] shadow-md outline-none"
             />
@@ -135,7 +149,25 @@ export default function AddKategori({ isOpen, onClose, mode = "tambah", data }) 
             </button>
           </div>
 
-          <button className="px-5 py-2 bg-[#002381] text-white rounded-lg">
+          <button
+            onClick={() => {
+
+              const formData = new FormData();
+
+              formData.append("title", nama);
+              formData.append("description", description);
+              formData.append("price", Number(harga).toString());
+              formData.append("duration", waktu);
+
+              if (imageFile) {
+                formData.append("image", imageFile);
+              }
+
+              onSubmit(formData);
+              onClose();
+            }}
+            className="px-5 py-2 bg-[#002381] text-white rounded-lg"
+          >
             {mode === "edit" ? "UPDATE" : "SIMPAN"}
           </button>
 

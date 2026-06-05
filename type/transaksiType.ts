@@ -4,6 +4,9 @@ export type Transaksi = {
   paket: string;
   tanggal: string;
   waktu: string;
-  harga: string;
   metode: string;
+  harga?: string | number;
+  nomor_hp?: string;
+  payment_status?: string;
+  booking_status?: string;
 };

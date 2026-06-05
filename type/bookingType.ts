@@ -1,8 +1,11 @@
 export type BookingType = {
   id: number;
-  time: string;
+  customer_name: string;
+  nomor_hp?: string;
   date: string;
-  name: string;
-  packageName: string;
+  time: string;
+  package_name: string;
+  payment_method: string;
+  deskripsi?: string;
   status: string;
 };
