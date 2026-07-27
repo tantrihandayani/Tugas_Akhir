@@ -4,8 +4,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from "next/navigation";
-
-import { saveRole, saveToken } from "@/lib/auth/auth";
+import {saveToken,saveRefreshToken,saveRole,} from "@/lib/auth/auth";
 
 export default function CustomerLogin() {
 
@@ -35,6 +34,7 @@ export default function CustomerLogin() {
       if (res.ok) {
 
         saveToken(data.access);
+        saveRefreshToken(data.refresh);
         saveRole(data.role);
 
         alert("Login berhasil");
@@ -42,7 +42,7 @@ export default function CustomerLogin() {
         if (data.role === "admin") {
           router.push("/admin/adminHome");
         } else {
-          router.push("/booking");
+          router.push("/");
         }
 
       } else {

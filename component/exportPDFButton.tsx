@@ -10,7 +10,15 @@ type Props = {
   prediksiPendapatan: number;
   kategoriFavorit: any;
   formatRupiah: (num: number) => string;
+  periode: {
+    type: string;
+    date: string;
+    month: string;
+    year: string;
 };
+};
+
+
 
 const ExportPDFButton = ({
   dataTransaksi,
@@ -18,9 +26,40 @@ const ExportPDFButton = ({
   prediksiPendapatan,
   kategoriFavorit,
   formatRupiah,
+  periode,
 }: Props) => {
 
   const handleExportPDF = async () => {
+    const namaBulan = [
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
+    ];
+
+    let periodeText = "Semua Data";
+
+    if (periode.type === "day") {
+      periodeText = new Date(periode.date).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    } else if (periode.type === "month") {
+      const [year, month] = periode.month.split("-");
+
+      periodeText = `${namaBulan[Number(month) - 1]} ${year}`;
+    } else if (periode.type === "year") {
+      periodeText = `Tahun ${periode.year}`;
+    }
     const doc = new jsPDF("p", "mm", "a4");
     const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -30,13 +69,14 @@ const ExportPDFButton = ({
     doc.addImage(logoBase64, "PNG", 15, 6, 20, 20);
 
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.text("STUDIO FOTO IBUU", pageWidth / 2, 13, {
+    doc.setFontSize(18);
+    doc.setFont("bold");
+    doc.text("STUDIO FOTO IBUU",  pageWidth / 2, 13, {
       align: "center",
     });
 
-    doc.setFontSize(11);
-    doc.text("LAPORAN PENDAPATAN BULANAN", pageWidth / 2, 22, {
+    doc.setFontSize(10);
+    doc.text("LAPORAN PENDAPATAN", pageWidth / 2, 22, {
       align: "center",
     });
 
@@ -45,7 +85,7 @@ const ExportPDFButton = ({
     doc.setFontSize(10);
     doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString("id-ID")}`, 14, 42);
     doc.text("Admin: Sistem", 14, 48);
-    doc.text("Periode: Mei 2026", 14, 54);
+    doc.text(`Periode: ${periodeText}`, 14, 54);
 
     // Ringkasan
     doc.setFillColor(245, 245, 245);
@@ -91,11 +131,11 @@ const ExportPDFButton = ({
     const finalY = (doc as any).lastAutoTable.finalY + 10;
 
     doc.setFontSize(11);
-    doc.setFont(undefined, "bold");
+    doc.setFont("helvetica", "bold");
     doc.text(`Total Pendapatan: ${formatRupiah(totalPendapatan)}`, 14, finalY);
 
     // Footer
-    doc.setFont(undefined, "normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(120);
     doc.text(

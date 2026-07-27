@@ -20,7 +20,11 @@ const [deskripsi, setDeskripsi] = useState("");
 const [hari, setHari] = useState("");
 const [jam, setJam] = useState("");
 const [paket, setPaket] = useState("");
+const [selectedLayanan, setSelectedLayanan] = useState<any>(null);
 const [metodeBayar, setMetodeBayar] = useState("");
+const [layananList, setLayananList] = useState([]);
+const [harga, setHarga] = useState(0);
+const [kategori, setKategori] = useState("");
 
 const resetForm = () => {
 setNama("");
@@ -29,6 +33,7 @@ setDeskripsi("");
 setHari("");
 setJam("");
 setPaket("");
+setKategori("");
 setMetodeBayar("");
 };
 
@@ -90,14 +95,58 @@ const jamList = [
 "20:30",
 ];
 
-const paketList = [
-{ nama: "Self Photo", durasi: "30 menit" },
-{ nama: "Theater Studio", durasi: "1 jam" },
-{ nama: "Photo Box", durasi: "30 menit" },
-{ nama: "Photo Session", durasi: "45 menit" },
-];
+const getLayanan = async () => {
+    try {
+        const res = await fetch(
+            "http://127.0.0.1:8000/api/layanan/"
+        );
 
-const metodePembayaranList = ["QRIS", "Tunai"];
+        const data = await res.json();
+
+        setLayananList(data);
+
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+useEffect(() => {
+    getLayanan();
+}, []);
+
+useEffect(() => {
+    if (!selectedLayanan || !kategori) {
+        setHarga(0);
+        return;
+    }
+    switch (kategori) {
+        case "self":
+            setHarga(Number(selectedLayanan.price_self));
+            break;
+        case "couple":
+            setHarga(Number(selectedLayanan.price_couple));
+            break;
+        case "group":
+            setHarga(Number(selectedLayanan.price_group));
+            break;
+        case "family":
+            setHarga(Number(selectedLayanan.price_family));
+            break;
+        default:
+            setHarga(0);
+    }
+}, [selectedLayanan, kategori]);
+
+const metodePembayaranList = [
+  {
+        label: "QRIS",
+        value: "qris",
+    },
+    {
+        label: "Tunai",
+        value: "tunai",
+  },
+  ];
 
 const getAvailableJam = () => {
 if (!hari) return jamList;
@@ -135,21 +184,34 @@ if (!available.includes(jam)) {
 }, [hari]);
 
 const handleSimpan = async () => {
-if (!nama || !hari || !jam || !paket || !metodeBayar) {
-alert("Lengkapi semua data dulu!");
-return;
+if (
+    !nama ||
+    !nomorHp ||
+    !hari ||
+    !jam ||
+    !paket ||
+    !kategori ||
+    !metodeBayar
+) {
+    alert("Lengkapi semua data dulu!");
+    return;
+}
+if (!/^08\d{8,11}$/.test(nomorHp)) {
+  alert("Nomor HP harus diawali 08 dan terdiri dari 10-13 digit.");
+  return;
 }
 
 const newBooking = {
-  name: nama,
+  nama,
   nomor_hp: nomorHp,
+  package_name: paket,
+  kategori,
+  payment_method: metodeBayar,
   deskripsi,
   date: hari,
   time: jam,
-  package_name: paket,
-  payment_method: metodeBayar,
-  status: "Waiting",
 };
+
 console.log("DATA DIKIRIM:", newBooking);
 try {
   const res = await fetch(
@@ -185,9 +247,10 @@ try {
 
 if (!open) return null;
 
-return ( <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] z-50"> <div className="flex flex-col bg-white w-[95%] md:w-[700px] max-h-[90vh] overflow-y-auto rounded-xl shadow-xl">
 
 
+return ( 
+  <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] z-50"> <div className="flex flex-col bg-white w-[95%] md:w-[700px] max-h-[90vh] overflow-y-auto rounded-xl shadow-xl">
     <div className="flex flex-row justify-between items-center px-6 py-4">
       <h1 className="text-xl font-extrabold text-[#2A4AA1]">
         Tambah Booking
@@ -215,9 +278,13 @@ return ( <div className="fixed inset-0 flex items-center justify-center bg-black
       />
 
       <input
-        type="text"
+        type="tel"
         value={nomorHp}
-        onChange={(e) => setNomorHp(e.target.value)}
+        maxLength={13}
+        onChange={(e) => {
+          const value = e.target.value.replace(/\D/g, "");
+          setNomorHp(value);
+        }}
         placeholder="Nomor Hp"
         className="w-full h-10 bg-[#B0C5FF] border border-[#2A4AA1] rounded-[20px] pl-5 placeholder-[#2A4AA1]"
       />
@@ -225,18 +292,59 @@ return ( <div className="fixed inset-0 flex items-center justify-center bg-black
       <div className="flex flex-col md:flex-row gap-4">
         <select
           value={paket}
-          onChange={(e) => setPaket(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+
+            setPaket(value);
+
+            const layanan = layananList.find(
+              (item: any) => item.title === value
+            );
+
+            setSelectedLayanan(layanan);
+          }}
           className="h-10 w-full bg-[#B0C5FF] border border-[#2A4AA1] rounded-[20px] px-4 text-[#2A4AA1]"
         >
           <option value="" disabled>
-            Pilih Paket Foto
+            Pilih Layanan
           </option>
 
-          {paketList.map((item, i) => (
-            <option key={i} value={item.nama}>
-              {item.nama} - {item.durasi}
+          {layananList.map((item: any) => (
+            <option
+              key={item.id}
+              value={item.title}
+            >
+              {item.title} - {item.duration}
             </option>
           ))}
+        </select>
+
+        <select
+            value={kategori}
+            onChange={(e)=>setKategori(e.target.value)}
+            className="h-10 w-full bg-[#B0C5FF] border border-[#2A4AA1] rounded-[20px] px-4 text-[#2A4AA1]"
+        >
+
+            <option value="">
+                Pilih Kategori
+            </option>
+
+            <option value="self">
+                Self
+            </option>
+
+            <option value="couple">
+                Couple
+            </option>
+
+            <option value="group">
+                Group
+            </option>
+
+            <option value="family">
+                Family
+            </option>
+
         </select>
 
         <select
@@ -247,13 +355,25 @@ return ( <div className="fixed inset-0 flex items-center justify-center bg-black
           <option value="" disabled>
             Pilih Pembayaran
           </option>
-
-          {metodePembayaranList.map((item, i) => (
-            <option key={i} value={item}>
-              {item}
+        {metodePembayaranList.map((item) => (
+            <option
+                key={item.value}
+                value={item.value}
+            >
+                {item.label}
             </option>
-          ))}
+        ))}
         </select>
+      </div>
+
+      <div className="flex items-center justify-between rounded-[20px] border border-[#2A4AA1] bg-[#EAF0FF] px-5 py-3">
+        <span className="font-semibold text-[#2A4AA1]">
+          Total Pembayaran
+        </span>
+
+        <span className="text-xl font-black text-[#2A4AA1]">
+          Rp {harga.toLocaleString("id-ID")}
+        </span>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
@@ -297,13 +417,13 @@ return ( <div className="fixed inset-0 flex items-center justify-center bg-black
         </select>
       </div>
 
-      <input
-        type="text"
-        value={deskripsi}
-        onChange={(e) => setDeskripsi(e.target.value)}
-        placeholder="Deskripsi"
-        className="w-full h-20 bg-[#B0C5FF] border border-[#2A4AA1] rounded-[20px] pl-5 placeholder-[#2A4AA1]"
-      />
+      <textarea
+  value={deskripsi}
+  onChange={(e) => setDeskripsi(e.target.value)}
+  placeholder="Catatan (Opsional)"
+  rows={2}
+  className="w-full rounded-[16px] border border-[#2A4AA1] bg-[#B0C5FF] px-4 py-3 text-sm placeholder-[#2A4AA1] resize-none"
+/>
     </div>
 
     <div className="w-full flex justify-between gap-3 mt-5 px-4 md:px-6 pb-4">
@@ -316,7 +436,15 @@ return ( <div className="fixed inset-0 flex items-center justify-center bg-black
 
       <button
         onClick={handleSimpan}
-        disabled={!hari || !jam || !paket || !metodeBayar}
+        disabled={
+          !nama ||
+          !nomorHp ||
+          !hari ||
+          !jam ||
+          !paket ||
+          !kategori ||
+          !metodeBayar
+        }
         className={`w-30 h-8 rounded-[20px] text-white font-semibold
         ${
           !hari || !jam || !paket || !metodeBayar

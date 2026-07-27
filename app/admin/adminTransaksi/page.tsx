@@ -11,41 +11,91 @@ import { Transaksi } from "@/type/transaksiType";
 const page = () => {
 
   const [transaksiList, setTransaksiList] = useState<Transaksi[]>([]);
-  const [selectedData, setSelectedData] = useState(null);
+  const [selectedData, setSelectedData] = useState<any>(null);
   const [openDetail, setOpenDetail] = useState(false);
   const [catatan, setCatatan] = useState("");
   const [search, setSearch] = useState("");
+  const [previewImage, setPreviewImage] = useState(false);
   const [statusAction, setStatusAction] = useState({
   type: "",
   time: 0
   });
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const filteredData = transaksiList.filter((item: any) =>
-    item.nama?.toLowerCase().includes(search.toLowerCase()) ||
-    item.id?.toString().includes(search) ||
-    item.nomor_hp?.toString().includes(search)
-  );
+  const filteredData = transaksiList.filter((item: any) => {
+    const cocokSearch =
+      item.nama?.toLowerCase().includes(search.toLowerCase()) ||
+      item.id?.toString().includes(search) ||
+      item.nomor_hp?.toString().includes(search);
 
-  useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/transaksi/")
-      .then((res) => res.json())
-      .then((data) => {
-        const normalized = data.map((item: any) => ({
-          id: item.id,
-          nama: item.nama,
-          paket: item.package_name,
-          tanggal: item.date,
-          waktu: item.time,
-          metode: item.payment_method,
-          harga: "-",
-          nomor_hp: item.nomor_hp,
-          payment_status: item.payment_status,
-          booking_status: item.booking_status,
-        }));
+    const cocokStatus =
+      statusFilter === "all" ||
+      item.payment_status === statusFilter;
 
-        setTransaksiList(normalized);
-      });
-  }, []);
+    return cocokSearch && cocokStatus;
+  });
+
+  const today = new Date().toISOString().split("T")[0];
+  const pendapatanHariIni = transaksiList
+    .filter(
+      (item) =>
+        item.payment_status === "confirmed" &&
+        item.tanggal?.split("T")[0] === today
+    )
+    .reduce(
+      (total, item) => total + Number(item.harga),
+      0
+    );
+
+  const menungguValidasi = transaksiList.filter(
+    (item) => item.payment_status === "pending"
+  ).length;
+
+  const transaksiBerhasil = transaksiList.filter(
+    (item) => item.payment_status === "confirmed"
+  ).length;
+
+  const transaksiDitolak = transaksiList.filter(
+    (item) => item.payment_status === "rejected"
+  ).length;
+
+  const fetchTransaksi = async () => {
+  try {
+    const res = await fetch("http://127.0.0.1:8000/api/transaksi/");
+    const data = await res.json();
+
+    const normalized = data.map((item: any) => ({
+      id: item.id,
+      nama: item.nama,
+      paket: item.package_name,
+      tanggal: item.date,
+      waktu: item.time ? `${item.time.slice(0, 5)} WIB` : "-",
+      metode: item.payment_method === "qris" ? "QRIS" : "Tunai",
+      bukti: item.bukti_pembayaran
+        ? `http://127.0.0.1:8000/media/${item.bukti_pembayaran}`
+        : null,
+      harga: item.harga || "-",
+      nomor_hp: item.nomor_hp,
+      payment_status: item.payment_status,
+      tanggalUpload: item.created_at,
+      booking_status: item.booking_status,
+    }));
+
+    setTransaksiList(normalized);
+  } catch (err) {
+    console.error("Gagal mengambil data transaksi:", err);
+  }
+};
+
+useEffect(() => {
+  fetchTransaksi();
+
+  const interval = setInterval(() => {
+    fetchTransaksi();
+  }, 10000); // setiap 10 detik
+
+  return () => clearInterval(interval);
+}, []);
 
 
   useEffect(() => {
@@ -59,12 +109,6 @@ const page = () => {
       setOpenDetail(false);
     }
   }, [statusAction]);
-
-  const cards = [
-    { title: "Total Hari Ini", value: "Rp. 700.000" },
-    { title: "Menunggu Validasi", value: "3 Transaksi" },
-    { title: "Berhasil", value: "21 Transaksi" },
-  ];
 
   const handleValidasi = async () => {
   if (!selectedData) return;
@@ -82,9 +126,8 @@ const page = () => {
         }),
       }
     );
-    setTransaksiList((prev: any[]) =>
-      prev.filter((item) => item.id !== selectedData.id)
-    );
+    await fetchTransaksi();
+
     setOpenDetail(false);
     alert("Transaksi berhasil divalidasi");
   } catch (err) {
@@ -105,75 +148,88 @@ const handleTolak = async () => {
         },
         body: JSON.stringify({
           payment_status: "rejected",
+          booking_status: "cancelled",
         }),
       }
     );
-    setTransaksiList((prev: any[]) =>
-      prev.filter((item) => item.id !== selectedData.id)
-    );
+    await fetchTransaksi();
+
     setOpenDetail(false);
     alert("Transaksi berhasil ditolak");
   } catch (err) {
     console.error(err);
   }
 };
-
+console.log(transaksiList);
   return (
     <div className='w-full  flex flex-row bg-white'>
        <Navbar/>
-       <div className='w-full bg-white flex flex-col ' >
-       <div className='w-full h-15 flex flex-row  justify-between px-5 mt-5 '>
+       <div className='w-full bg-white  flex flex-col ' >
+       <div className='w-full h-15 flex flex-row justify-between px-5 mt-5 '>
           <h1 className='font-extrabold text-2xl text-[#2A4AA1]'>
             Menu Transaksi
             </h1>
-            <div className='flex h-13 flex-row gap-2 text-white'>
-            <button className='flex items-center px-2 gap-2 w-40 h-10 bg-[#2A4AA1] rounded-lg ml-80'>
-            <Image
-              src="/assets/image/search.png"
-              width={20}
-              height={20}
-              alt="search"
-            />
+            <div className="flex items-center gap-3">
+            <div className="flex h-10 w-72 items-center gap-2 rounded-lg bg-[#2A4AA1] px-3">
+              <Image
+                src="/assets/image/search.png"
+                width={18}
+                height={18}
+                alt="search"
+              />
 
-            <input
-              type="text"
-              placeholder="Cari transaksi..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="placeholder:text-white/30 text-white outline-none bg-transparent text-[#2A4AA1] w-full"
-            />
-            </button>
+              <input
+                type="text"
+                placeholder="Cari transaksi..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-transparent text-white placeholder:text-white/50 outline-none"
+              />
+            </div>
        
-            <button          
-            className='flex items-center justify-center w-45 h-10 bg-[#2A4AA1] rounded-lg'>
-            <Image
-              src="/assets/image/add.png"
-              className='w-7 h-7'
-              width={25}
-              height={25}
-              alt='logo'
-            />
-            <p className='font-bold text-[15px]'>Tambah Transaksi</p>
-            </button>
+            <div className="flex items-center gap-3">
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="h-10 w-40 rounded-lg border border-[#2A4AA1] px-3 text-sm text-[#2A4AA1]"
+            >
+              <option value="all">Semua Status</option>
+              <option value="pending">Menunggu</option>
+              <option value="confirmed">Berhasil</option>
+              <option value="rejected">Ditolak</option>
+            </select>
+
+
+          </div>
            </div> 
         </div>
        
         {/* CONTAINER BIRU */}
-      <div className='w-full  bg-[#D4E0FF] flex flex-col pl-5 '>
-       
+      <div className='w-full h-full bg-[#D4E0FF] rounded-t-xl flex flex-col pl-5 '>
+      
         {/* KATEGORI (tidak ikut scroll) */}
-        <div className="w-full flex flex-wrap gap-2 py-3 px-3">
-          {cards.map((item, index) => (
+        <div className="flex gap-3 px-3 py-3">
             <BarTransaksi
-              key={index}
-              title={item.title}
-              value={item.value}
+                title="Pendapatan Hari Ini"
+                value={`Rp ${pendapatanHariIni.toLocaleString("id-ID")}`}
             />
-          ))}
+            <BarTransaksi
+                title="Menunggu Validasi"
+                value={`${menungguValidasi}`}
+            />
+            <BarTransaksi
+                title="Berhasil"
+                value={`${transaksiBerhasil}`}
+            />
+            <BarTransaksi
+                title="Ditolak"
+                value={`${transaksiDitolak}`}
+            />
         </div>
 
         {/* Data Transaksi */}
-        <div className='w-full flex h-102 flex-col gap-5   pb-10 overflow-y-auto   '>
+        <div className='w-full h-110 flex px-5  flex-col gap-5   pb-10 overflow-y-auto   '>
           {filteredData.map((item) => (
             <CardTransaksi 
               key={item.id} 
@@ -214,19 +270,28 @@ const handleTolak = async () => {
 
               {/* KIRI - BUKTI */}
               <div className="w-[300px]">
-                <div className="bg-gray-100 rounded-xl p-3 shadow">
-                  {selectedData?.bukti && (
-                    <Image
-                      src={selectedData?.bukti}
-                      width={250}
-                      height={400}
-                      alt="bukti"
-                      className="rounded-lg"
-                    />
+                <div
+                  onClick={() => selectedData?.bukti && setPreviewImage(true)}
+                  className="bg-gray-100 rounded-xl p-3 shadow h-[420px] cursor-zoom-in overflow-hidden"
+                >
+                  {selectedData?.bukti ? (
+                    <div className="w-full h-full bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center">
+                      <img
+                        src={selectedData.bukti}
+                        alt="bukti"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-500">
+                      Bukti pembayaran tidak tersedia
+                    </div>
                   )}
                 </div>
+
                 <p className="text-sm text-[#2A4AA1] mt-2">
-                  Upload: {selectedData?.tanggalUpload
+                  Upload:{" "}
+                  {selectedData?.tanggalUpload
                     ? new Date(selectedData.tanggalUpload).toLocaleString("id-ID", {
                         day: "2-digit",
                         month: "2-digit",
@@ -248,12 +313,24 @@ const handleTolak = async () => {
                       <h2 className="text-xl font-bold text-[#2A4AA1]">
                         {selectedData?.nama}
                       </h2>
-                      <p className="text-[#2A4AA1]">{selectedData?.nohp}</p>
-                      <p className="text-[#2A4AA1]">{selectedData?.email}</p>
+                      <p className="text-[#2A4AA1]">{selectedData?.nomor_hp}</p>
+                      
                     </div>
 
-                    <div className="bg-[#2A4AA1] text-white px-4 py-2 mr-5 rounded-lg">
-                      Menunggu Validasi
+                    <div
+                      className={`px-4 py-2 mr-5 rounded-lg text-white font-semibold ${
+                        selectedData?.payment_status === "confirmed"
+                          ? "bg-green-500"
+                          : selectedData?.payment_status === "rejected"
+                          ? "bg-red-500"
+                          : "bg-yellow-500"
+                      }`}
+                    >
+                      {selectedData?.payment_status === "confirmed"
+                        ? "Berhasil"
+                        : selectedData?.payment_status === "rejected"
+                        ? "Ditolak"
+                        : "Menunggu Validasi"}
                     </div>
                   </div>
 
@@ -271,7 +348,9 @@ const handleTolak = async () => {
                     <p>{selectedData?.waktu}</p>
 
                     <p className="font-semibold">Harga :</p>
-                    <p>{selectedData?.harga}</p>
+                    <p>Rp {Number(
+                      selectedData?.harga || 0
+                    ).toLocaleString("id-ID")}</p>
 
                     <p className="font-semibold">Metode Pembayaran :</p>
                     <p>{selectedData?.metode}</p>
@@ -300,24 +379,57 @@ const handleTolak = async () => {
 
                 {/* BUTTON */}
                 <div className="flex justify-between mt-6">
-                  <button 
-                    onClick={handleValidasi}
-                    className="flex items-center gap-2 px-6 py-3 bg-[#3DCBFF]/40 rounded-lg text-[#002381] font-bold"
-                  >
-                    ✔ Validasi
-                  </button>
 
-                  <button 
-                  onClick={handleTolak}
-                  className="flex items-center gap-2 px-6 py-3 bg-red-500 text-white rounded-lg font-bold">
-                    ✖ Tolak
-                  </button>
-                </div>
+                {selectedData?.payment_status === "pending" ? (
+                  <>
+                    <button
+                      onClick={handleValidasi}
+                      className="flex items-center gap-2 px-6 py-3 bg-[#3DCBFF]/40 rounded-lg text-[#002381] font-bold"
+                    >
+                      ✔ Validasi
+                    </button>
+
+                    <button
+                      onClick={handleTolak}
+                      className="flex items-center gap-2 px-6 py-3 bg-red-500 text-white rounded-lg font-bold"
+                    >
+                      ✖ Tolak
+                    </button>
+                  </>
+                ) : (
+                  <div
+                    className={`w-full text-center py-3 rounded-lg font-bold ${
+                      selectedData?.payment_status === "confirmed"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {selectedData?.payment_status === "confirmed"
+                      ? "✓ Transaksi telah divalidasi"
+                      : "✕ Transaksi telah ditolak"}
+                  </div>
+                )}
+
+              </div>
 
               </div>
             </div>
           </div>
         )}
+
+        {previewImage && (
+        <div
+          onClick={() => setPreviewImage(false)}
+          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-10"
+        >
+          <img
+            src={selectedData?.bukti}
+            alt="Preview"
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   )
 }

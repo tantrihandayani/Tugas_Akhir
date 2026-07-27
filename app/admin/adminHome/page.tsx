@@ -6,27 +6,71 @@ import Navbar from '@/component/navbar'
 import Booking from '@/component/booking'
 import ChartPendapatan from '@/component/chartPendapatan'
 import Link from 'next/link';
+import { BookingType } from "@/type/bookingType";
+import {
+    FiTrendingUp,
+    FiTrendingDown,
+    FiMinus,
+    FiActivity,
+    FiBarChart2,
+    FiCalendar,
+    FiClock,
+    FiDollarSign,
+    FiUsers,
+} from "react-icons/fi";
+
+
+type ChartData = {
+    bulan: string;
+    pendapatan: number;
+    movingAverage: number;
+};
+
+type Prediksi = {
+    nominal: number;
+    trend: string;
+    persentase: number;
+    bulanPrediksi: string;
+    metode: string;
+    insight: string;
+};
+
+type Dashboard = {
+    booking_hari_ini: number;
+    antrian: number;
+    pelanggan_hari_ini: number;
+    pendapatan_hari_ini: number;
+    total_booking: number;
+    waiting: number;
+    progress: number;
+    finished: number;
+};
 
 
 export default function AdminHome() {
 
   
-  const [bookingList, setBookingList] = React.useState<any[]>([]);
-  const [laporanData, setLaporanData] = React.useState<any[]>([]);
-  const namaBulan = [
-      "Januari",
-      "Februari",
-      "Maret",
-      "April",
-      "Mei",
-      "Juni",
-      "Juli",
-      "Agustus",
-      "September",
-      "Oktober",
-      "November",
-      "Desember",
-    ];
+  const [bookingList, setBookingList] = React.useState<BookingType[]>([]);
+  const [chartData, setChartData] = React.useState<ChartData[]>([]);
+  const [prediksi, setPrediksi] = React.useState<Prediksi>({
+    nominal: 0,
+    trend: "belum tersedia",
+    persentase: 0,
+    bulanPrediksi: "-",
+    metode: "",
+    insight: "",
+});
+
+const [dashboard, setDashboard] = React.useState<Dashboard>({
+    booking_hari_ini: 0,
+    antrian: 0,
+    pelanggan_hari_ini: 0,
+    pendapatan_hari_ini: 0,
+    total_booking: 0,
+    waiting: 0,
+    progress: 0,
+    finished: 0,
+});
 
 
   React.useEffect(() => {
@@ -36,22 +80,16 @@ export default function AdminHome() {
   }, []);
 
   React.useEffect(() => {
-  fetch("http://127.0.0.1:8000/api/laporan/")
-    .then((res) => res.json())
-    .then((data) => setLaporanData(data));
-}, []);
+    fetch("http://127.0.0.1:8000/api/laporan/")
+      .then((res) => res.json())
+      .then((data) => {
 
-const [dashboard, setDashboard] = React.useState({
-  booking_hari_ini: 0,
-  antrian: 0,
-  pelanggan_hari_ini: 0,
-  pendapatan_hari_ini: 0,
+        setPrediksi(data.prediksi);
+        setChartData(data.chart);
 
-  total_booking: 0,
-  waiting: 0,
-  progress: 0,
-  finished: 0,
-});
+      });
+  }, []);
+
 
 const getTodayLocal = () => {
   const now = new Date();
@@ -66,40 +104,6 @@ const todayBookings = bookingList.filter(
   (item) => item.date?.split("T")[0] === today
 );
 
-const totalTodayBookings = todayBookings.length;
-const pendapatanBulanan: { [key: string]: number } = {};
-
-laporanData.forEach((item) => {
-  const date = new Date(item.tanggal);
-  const bulan = namaBulan[date.getMonth()];
-  if (!pendapatanBulanan[bulan]) {
-    pendapatanBulanan[bulan] = 0;
-  }
-  pendapatanBulanan[bulan] += Number(item.harga);
-});
-const monthlyData = namaBulan.map((bulan) => ({
-  bulan,
-  pendapatan: pendapatanBulanan[bulan] || 0,
-}));
-
-const dataWithMA = monthlyData.map((item, index, arr) => {
-  if (index < 2) {
-    return {
-      ...item,
-      movingAverage: item.pendapatan,
-    };
-  }
-  const avg =
-    (
-      arr[index].pendapatan +
-      arr[index - 1].pendapatan +
-      arr[index - 2].pendapatan
-    ) / 3;
-  return {
-    ...item,
-    movingAverage: avg,
-  };
-});
 
 React.useEffect(() => {
   fetch("http://127.0.0.1:8000/api/booking/")
@@ -107,116 +111,180 @@ React.useEffect(() => {
     .then(data => setBookingList(data))
     .catch(err => console.error(err));
 }, []);
-console.log("HOME DATA:", bookingList);
+
   return (
-    <div className='w-full h-150 flex flex-row bg-white'>
+    <div className="flex h-screen bg-[#F4F7FE]">
 
       <Navbar />
 
-      <div className='flex flex-col'>
-
-        <Image
-          src="/assets/image/logo.png"
-          className='ml-100 -mt-3'
-          width={130}
-          height={130}
-          alt='logo'
-        />
-
-        <div className='w-220 h-200 flex flex-col -mt-3 ml-10 pb-10 rounded-xl border-[1px] shadow-lg shadow-blue-800 overflow-y-auto bg-[#E0E9FF] border-blue-900'>
+      <div className="flex-1 flex flex-col -mt-3 overflow-hidden">
+        <div className='flex flex-row items-center '>
+          <Image
+            src="/assets/image/logo.png"
+            className=" "
+            width={130}
+            height={130}
+            alt='logo'
+          />
+          <h1 className='font-bold text-4xl text-shadow-md text-[#2A4AA1]'>Dahsboard Admin</h1>
+        </div>
+        <div className="flex-1 m-3 -mt-3 rounded-2xl border border-blue-900 bg-[#E0E9FF] shadow-lg shadow-blue-300 overflow-y-auto">
 
           {/* CARD STATISTIK */}
-          <div className='flex flex-row ml-22 mt-5 mb-5 gap-5'>
-
-            <div className='flex flex-col w-40 h-17 rounded-lg bg-[#2A4AA1]'>
-              <div className='flex flex-row mt-1 ml-2 gap-2'>
-                <Image
-                  src="/assets/image/date.png"
-                  width={20}
-                  height={20}
-                  alt='date'
-                />
-                <p className='text-[12px] mt-1 text-white'>Booking Hari Ini</p>
-              </div>
-
-              <p className='text-lg font-bold text-[#FFA600] flex justify-center'>
-                {dashboard.booking_hari_ini} Booking
-              </p>
-            </div>
-
-            <div className='flex flex-col  w-40 h-17 rounded-lg bg-[#2A4AA1]'>
-              <div className='flex flex-row gap-2 mt-1 ml-2'>
-                <Image
-                  src="/assets/image/antrian.png"
-                  className='h-2 mt-2'
-                  width={20}
-                  height={5}
-                  alt='antrian'
-                />
-
-                <p className='text-[12px] mt-1 text-white'>
-                  Antrian Hari Ini
-                </p>
-              </div>
-
-              <p className='text-lg font-bold text-[#FFA600] flex justify-center'>
-                {dashboard.antrian} Antrian
-              </p>
-            </div>
-
-            <div className='flex flex-col w-40 h-17 rounded-lg bg-[#2A4AA1]'>
-              <div className='flex flex-row gap-2 mt-1 ml-2'>
-                <Image
-                  src="/assets/image/moneyBag.png"
-                  width={20}
-                  height={20}
-                  alt='money'
-                />
-
-                <p className='text-[12px] mt-1 text-white'>
-                  Pendapatan Hari Ini
-                </p>
-              </div>
-
-              <p className='text-lg font-bold text-[#FFA600] flex justify-center'>
-                Rp {dashboard.pendapatan_hari_ini.toLocaleString("id-ID")}
-              </p>
-            </div>
-
-            <div className='flex flex-col w-40 h-17 rounded-lg bg-[#2A4AA1]'>
-              <div className='flex flex-row gap-2 mt-1 ml-2'>
-                <Image
-                  src="/assets/image/pipel.png"
-                  width={20}
-                  height={20}
-                  alt='people'
-                />
-
-                <p className='text-[12px] mt-1 text-white'>
-                  Pelanggan Hari Ini
-                </p>
-              </div>
-
-              <p className='text-lg font-bold text-[#FFA600] flex justify-center'>
-                {dashboard.pelanggan_hari_ini} Orang
-              </p>
-            </div>
-
+          <div className="grid grid-cols-2 gap-3 px-7 py-7 lg:grid-cols-4">
+              {[
+                  {
+                      title: "Booking Hari Ini",
+                      value: `${dashboard.booking_hari_ini}`,
+                      suffix: "Booking",
+                      icon: <FiCalendar size={17} />,
+                  },
+                  {
+                      title: "Antrian Hari Ini",
+                      value: `${dashboard.antrian}`,
+                      suffix: "Antrian",
+                      icon: <FiClock size={17} />,
+                  },
+                  {
+                      title: "Pendapatan Hari Ini",
+                      value: `Rp ${dashboard.pendapatan_hari_ini.toLocaleString("id-ID")}`,
+                      suffix: "",
+                      icon: <FiDollarSign size={17} />,
+                  },
+                  {
+                      title: "Pelanggan Hari Ini",
+                      value: `${dashboard.pelanggan_hari_ini}`,
+                      suffix: "Orang",
+                      icon: <FiUsers size={17} />,
+                  },
+              ].map((item) => (
+                  <div
+                      key={item.title}
+                      className="group overflow-hidden rounded-xl border border-[#D8E3FF] bg-white shadow-[0_10px_28px_rgba(42,74,161,0.12)] transition-all duration-300 hover:-translate-y-1 hover:border-[#2A4AA1] hover:shadow-[0_18px_40px_rgba(42,74,161,0.20)]"
+                  >
+                      <div className="h-1 bg-gradient-to-r from-[#2A4AA1] via-[#4F73E8] to-[#6B8BFF]" />
+                      <div className="flex items-center justify-between px-4 py-3">
+                          <div>
+                              <p className="text-[11px] font-semibold text-slate-500">
+                                  {item.title}
+                              </p>
+                              <h2 className="mt-1 text-lg font-black leading-none text-slate-900">
+                                  {item.value}
+                                  <span className="ml-1 text-xs font-semibold text-slate-500">
+                                      {item.suffix}
+                                  </span>
+                              </h2>
+                          </div>
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#2A4AA1] to-[#5B7DF3] text-white shadow-md transition-all duration-300 group-hover:rotate-6 group-hover:scale-110">
+                              {item.icon}
+                          </div>
+                      </div>
+                  </div>
+              ))}
           </div>
+
+          {/* HERO PREDIKSI */}
+    <div className="mx-7 mb-7 overflow-hidden rounded-2xl border border-[#D8E3FF] bg-gradient-to-r from-[#2A4AA1] via-[#3A5FC2] to-[#5B7DF3] shadow-[0_12px_35px_rgba(42,74,161,0.25)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(42,74,161,0.35)]">
+      <div className="relative flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between">
+        {/* Background Decoration */}
+        <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-24 left-16 h-44 w-44 rounded-full bg-white/10 blur-2xl" />
+
+        {/* LEFT */}
+        <div className="relative z-10">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                <FiActivity />
+                Prediksi Pendapatan
+            </div>
+            <h2 className="text-4xl font-black tracking-tight text-white">
+                Rp{" "}
+                {Number(prediksi.nominal).toLocaleString("id-ID")}
+            </h2>
+            <p className="mt-2 max-w-lg text-sm text-blue-100">
+                Prediksi pendapatan bulan berikutnya berdasarkan metode
+                <span className="font-semibold text-white">
+                    {" "}Single Moving Average (3 Bulan)
+                </span>
+            </p>
+            
+        </div>
+
+        {/* RIGHT */}
+        <div className="relative z-10 flex flex-wrap items-center gap-3">
+            <div
+                className={`flex items-center gap-2 rounded-xl border px-4 py-3 backdrop-blur transition-all duration-300 ${
+                    prediksi.trend === "naik"
+                        ? "border-green-300/30 bg-green-400/15 text-green-100"
+                        : prediksi.trend === "turun"
+                        ? "border-red-300/30 bg-red-400/15 text-red-100"
+                        : "border-yellow-300/30 bg-yellow-400/15 text-yellow-100"
+                }`}
+            >
+                {prediksi.trend === "naik" ? (
+                    <FiTrendingUp size={20} />
+                ) : prediksi.trend === "turun" ? (
+                    <FiTrendingDown size={20} />
+                ) : (
+                    <FiMinus size={20} />
+                )}
+                <div>
+                    <p className="text-xs opacity-80">
+                        Trend
+                    </p>
+                    <p className="font-bold capitalize">
+                        {prediksi.trend}
+                    </p>
+                </div>
+            </div>
+            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white backdrop-blur">
+                <p className="text-xs text-blue-100">
+                    Perubahan
+                </p>
+                <p className="text-lg font-black">
+                    {prediksi.persentase > 0 ? "+" : ""}
+                    {prediksi.persentase}%
+                </p>
+            </div>
+            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white backdrop-blur">
+                <p className="text-xs text-blue-100">
+                    Metode
+                </p>
+                <div className="mt-1 flex items-center gap-2">
+                    <FiBarChart2 />
+                    <span className="font-bold">
+                        SMA (3)
+                    </span>
+                </div>
+            </div>
+            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white backdrop-blur">
+                <p className="text-xs text-blue-100">
+                    Bulan Prediksi
+                </p>
+
+                <p className="mt-1 font-bold">
+                    {prediksi.bulanPrediksi}
+                </p>
+            </div>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-blue-100">
+                {prediksi.insight}
+            </p>
+        </div>
+      </div>
+    </div>
 
           {/* GRAFIK MOVING AVERAGE */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
   
             <div className="xl:col-span-2 px-10 ">
-              <ChartPendapatan data={dataWithMA} />
+              <ChartPendapatan data={chartData}/>
             </div>
           </div>
 
           {/* BOOKING */}
-          <div className='w-220 flex flex-col gap-3 items-center mt-5'>
+          <div className="w-full flex flex-col items-center px-6 pb-6">
 
             <Link href="/admin/adminBooking">
-              <h1 className='underline mb-5 font-bold text-2xl text-[#2A4AA1] cursor-pointer hover:text-blue-600'>
+              <h1 className='underline py-5 font-bold text-2xl text-[#2A4AA1] cursor-pointer hover:text-blue-600'>
                 Booking Hari Ini
               </h1>
             </Link>
@@ -228,22 +296,17 @@ console.log("HOME DATA:", bookingList);
                 id={item.id}
                 date={item.date}
                 time={item.time}
-                customer_name={item.nama}
+                nama={item.nama}
                 package_name={item.package_name}
                 payment_method={item.payment_method}
-                status={item.booking_status}
+                booking_status={item.booking_status}
                 className="w-full scale-90"
               />
             );
           })}
-         
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   )
 };

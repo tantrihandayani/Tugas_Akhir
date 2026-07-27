@@ -33,11 +33,17 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (res.ok) {
-        alert("Register berhasil");
-        router.push("/login");
+          alert("Register berhasil");
+          router.push("/login");
       } else {
-        console.log(data);
-        alert("Register gagal");
+          console.log(data);
+
+          const error =
+              Object.values(data)
+                  .flat()
+                  .join("\n");
+
+          alert(error);
       }
     } catch (error) {
       console.error(error);

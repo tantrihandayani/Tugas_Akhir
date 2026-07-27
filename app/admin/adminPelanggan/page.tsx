@@ -5,220 +5,128 @@ import Image from 'next/image'
 import { useState, useEffect } from 'react';
 import Navbar from '@/component/navbar'
 import Pelanggan from '@/component/pelanggan'
-import { pelangganData } from '@/lib/data/data_pelanggan'
+import { getToken } from "@/lib/auth/auth";
+import { PelangganType } from "@/type/pelangganType";
+import CustomerDetail from "@/component/customer/CustomerDetail";
+import CustomerCard from "@/component/customer/CustomerCard";
+import CustomerHeader from "@/component/customer/CustomerHeader";
+
+
 
 const page = () => {
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [customers, setCustomers] = useState<PelangganType[]>([]);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("az");
+  const [selectedCustomer, setSelectedCustomer] = useState<PelangganType | null>(null);
+
+
+  const getCustomer = async () => {
+    try {
+        const token = getToken();
+
+        const res = await fetch("http://127.0.0.1:8000/api/customer/", {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        const data = await res.json();
+
+        console.log("==================");
+        console.log("STATUS", res.status);
+        console.log("DATA", data);
+        console.log("==================");
+
+        // pastikan yang disimpan selalu array
+        const customerData = Array.isArray(data)
+            ? data
+            : Array.isArray(data.data)
+            ? data.data
+            : [];
+
+        setCustomers(customerData);
+
+        if (customerData.length > 0) {
+            setSelectedCustomer(customerData[0]);
+        } else {
+            setSelectedCustomer(null);
+        }
+    } catch (err) {
+        console.error(err);
+        setCustomers([]);
+        setSelectedCustomer(null);
+    }
+};
+
+useEffect(()=>{
+    getCustomer();
+},[]);
+
+const filteredCustomers = [...customers]
+.filter((customer) =>
+    customer.username
+        .toLowerCase()
+        .includes(search.toLowerCase())
+)
+.sort((a, b) => {
+    switch (sortBy) {
+        case "az":
+            return a.username.localeCompare(b.username);
+        case "za":
+            return b.username.localeCompare(a.username);
+        case "booking":
+            return b.total_booking - a.total_booking;
+        case "spending":
+            return b.total_transaksi - a.total_transaksi;
+        default:
+            return 0;
+    }
+});
 
   return (
-   <div className=' h-150 flex flex-row bg-white'> 
+   <div className="flex h-screen overflow-hidden bg-white">
+
     <Navbar />
-    <div className='w-full flex flex-col'>
-    <div className='w-full h-15  flex flex-row mt-5 justify-between px-5 '>
-       <h1 className='font-extrabold text-2xl text-[#2A4AA1]'>Menu Pelanggan</h1>
-       <div className='flex flex-row gap-2 text-white'>
-        <button className='flex flex-row justify-center items-center gap-2 w-40 h-10 bg-[#2A4AA1] rounded-lg ml-80'>
-          <Image
-           src="/assets/image/pipel.png"
-           className='w-7 h-7 '
-           width={25}
-           height={25}
-           alt='logo'
-          />
-          <p className='font-bold text-[15px]'>Cari Pelanggan</p>
-        </button>
-        <button 
-        onClick={() => setIsOpen(true)}
-        className='flex flex-row justify-center items-center  w-45 h-10 bg-[#2A4AA1] rounded-lg '>
-          <Image
-           src="/assets/image/add.png"
-           className='w-7 h-7 '
-           width={25}
-           height={25}
-           alt='logo'
-          />
-          <p className='font-bold text-[15px]'>Tambah Pelanggan</p>
-        </button>
-       </div> 
 
-    </div>
-    <div className='w-full h-full bg-[#D4E0FF]'>
+    <div className="flex flex-1 flex-col overflow-hidden">
+        <CustomerHeader
+            search={search}
+            setSearch={setSearch}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+        />
+        <div className="flex-1 overflow-y-auto bg-[#F4F7FE] p-6 lg:p-8">
 
-      {/* INI 3BAR INFO */}
-      <div className='w-full flex flex-row gap-3 px-2 py-3 justify-center text-center'>
-        <div className='w-74 h-20 bg-white'>
-          <p className='text-[#2A4AA1] font-semibold text-sm mt-2'>Pelanggan Hari Ini :</p>
-          <p className='font-extrabold text-2xl text-[#FFA600] '>13 Orang</p>
-        </div>
-        <div className='w-74 h-20 bg-white'>
-          <p className='text-[#2A4AA1] font-semibold text-sm mt-2'>Pelanggan Hari Ini :</p>
-          <p className='font-extrabold text-2xl text-[#FFA600] '>13 Orang</p>
-        </div>
-        <div className='w-74 h-20 bg-white'>
-          <p className='text-[#2A4AA1] font-semibold text-sm mt-2'>Pelanggan Hari Ini :</p>
-          <p className='font-extrabold text-2xl text-[#FFA600] '>13 Orang</p>
-        </div>
-      </div>
-      
-    <div className='flex flex-row px-3 gap-3 '>
-      {/* INI DATA PELANGGAN */}
-      <div className='w-full flex flex-col gap-3 '>
-        {pelangganData.map((item, index) => {
-          return (
-          <Pelanggan 
-            key={index}
-            id={item.id}
-            name={item.name}
-            phone={item.phone}
-            status={item.status}
-            totalBooking={item.totalBooking}
-          />
-          )
-        })}
-      </div>
+    <div className="flex flex-col lg:flex-row gap-6 items-start">
 
-      {/* INI DETAIL PELANGGAN */}
-      <div className='w-full h-100 bg-white  rounded-lg px-7 py-3'>
-        <p className='font-extrabold text-[#002381] text-[20px]'>Tantri Handayani</p>
-        <p className='font-bold text-[#002381] text-[13px]'>081224566788</p>
-        <p className=' text-[#002381] text-[13px]'>tantricantik@gmail.com</p>
-      <div className="w-full  rounded-lg mx-auto bg-[#2A4AA1] my-3 pb-0.5 opacity-50"></div>
-      <div className='w-full h-70 rounded-lg bg-[#BCEDFF]'>
-        <div className='w-full px-3 py-3'>
-          <p className='font-bold text-[#002381] text-[13px]'>Total Booking :</p>
-          <p className='font-bold text-[#002381] text-[13px]'>Total Transaksi :</p>
-        </div>
-        <div className="w-full  rounded-lg mx-auto bg-[#2A4AA1]  pb-0.5 opacity-30"></div>
-        <div className='w-full px-3 py-3'>
-          <p className='font-bold text-[#002381] text-[13px]'>Terakhir Booking :</p>
-          <p className='font-bold text-[#002381] text-[13px]'>Status terakhir :</p>
-        </div>
-        <div className="w-full  rounded-lg  bg-[#2A4AA1]  pb-0.5 opacity-30"></div>
-        <div className='w-full px-3 pt-3'>
-          <p className='font-bold text-[#002381] text-[13px] italic'>Penilaian Customer</p>
-          
-          {/* INI BINTANG/PENILAIAN PELANGGAN */}
-          <div className='flex flex-row '>
-            <Image
-            src="/assets/image/stardoff.png"
-            className='w-12 h-12 ml-15'
-            width={25}
-            height={25}
-            alt='logo'
-            />
-            <Image
-            src="/assets/image/stardoff.png"
-            className='w-12 h-12 '
-            width={25}
-            height={25}
-            alt='logo'
-            />
-            <Image
-            src="/assets/image/stardoff.png"
-            className='w-12 h-12 '
-            width={25}
-            height={25}
-            alt='logo'
-            />
-            <Image
-            src="/assets/image/stardoff.png"
-            className='w-12 h-12 '
-            width={25}
-            height={25}
-            alt='logo'
-            />
-            <Image
-            src="/assets/image/star.png"
-            className='w-12 h-12 '
-            width={25}
-            height={25}
-            alt='logo'
-            />
-           </div>
-        </div>
-        <div className='w-full px-3 '>
-          <p className='font-bold text-[#002381] text-[13px] italic'>Deskripsi:</p>
-          <p className=' text-[#002381] text-[10px] text-justify '>
-            Katanya di polindra ada satu gadis
-            cantik banget yang bernama tantri handayani
-            dia dari prodi teknik informatika semester akhir</p>
-        </div>
+        {/* Customer List */}
 
-      </div>
-      </div>
-    </div>
+        <div className="w-full lg:basis-[35%] lg:max-w-[420px] lg:min-w-[360px] flex flex-col gap-3 overflow-y-auto lg:max-h-[calc(100vh-180px)] pr-1">
 
-    </div>
-    </div>
-    {isOpen && (
-        <div 
-          className="fixed inset-0 flex items-center justify-center bg-black/40 z-50"
-          onClick={() => setIsOpen(false)}
-        >
-          <div 
-            className="bg-white w-[420px] p-5 rounded-xl shadow-lg flex flex-col gap-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <h2 className="text-xl font-extrabold text-[#2A4AA1]">
-              Tambah Pelanggan
-            </h2>
-
-            {/* Form */}
-            <div className="flex flex-col gap-3">
-              
-              <div className="flex flex-col">
-                <label className="text-[#002381] text-sm font-semibold">
-                  Nama
-                </label>
-                <input
-                  type="text"
-                  placeholder="Masukkan nama pelanggan"
-                  className="border border-[#D4E0FF] focus:outline-none focus:ring-2 focus:ring-[#2A4AA1] p-2 rounded-md"
+            {filteredCustomers.map((item) => (
+                <CustomerCard
+                    key={item.id}
+                    customer={item}
+                    active={selectedCustomer?.id === item.id}
+                    onClick={() => setSelectedCustomer(item)}
                 />
-              </div>
+            ))}
 
-              <div className="flex flex-col">
-                <label className="text-[#002381] text-sm font-semibold">
-                  No HP
-                </label>
-                <input
-                  type="text"
-                  placeholder="08xxxxxxxxxx"
-                  className="border border-[#D4E0FF] focus:outline-none focus:ring-2 focus:ring-[#2A4AA1] p-2 rounded-md"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-[#002381] text-sm font-semibold">
-                  Status
-                </label>
-                <select className="border border-[#D4E0FF] p-2 rounded-md">
-                  <option>Loyal</option>
-                  <option>Regular</option>
-                  <option>New</option>
-                </select>
-              </div>
-
-            </div>
-
-            {/* Action */}
-            <div className="flex justify-end gap-2 mt-3">
-              <button
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-1.5 rounded-md bg-gray-300 text-sm"
-              >
-                Batal
-              </button>
-
-              <button className="px-4 py-1.5 rounded-md bg-[#2A4AA1] text-white text-sm font-semibold">
-                Simpan
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+
+        {/* Customer Detail */}
+
+        <div className="flex-1 lg:basis-[65%] min-w-0">
+
+            <CustomerDetail customer={selectedCustomer} />
+
+        </div>
+
+    </div>
+
+</div>
+    </div>
    </div>
   )
 }

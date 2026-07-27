@@ -2,18 +2,39 @@
 
 import { useState, useEffect } from "react";
 
-export default function AddKategori({ isOpen, onClose, mode = "tambah", data, onSubmit }) {
+type AddKategoriProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  mode?: "tambah" | "edit";
+  data?: any;
+  onSubmit: (formData: FormData) => void;
+};
+
+export default function AddKategori({
+  isOpen,
+  onClose,
+  mode = "tambah",
+  data,
+  onSubmit,
+}: AddKategoriProps) {
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [nama, setNama] = useState("");
-  const [harga, setHarga] = useState("");
+  const [maxPerson, setMaxPerson] = useState("");
+
+  const [hargaSelf, setHargaSelf] = useState("");
+  const [hargaCouple, setHargaCouple] = useState("");
+  const [hargaGroup, setHargaGroup] = useState("");
+  const [hargaFamily, setHargaFamily] = useState("");
   const [waktu, setWaktu] = useState("");
   const [description, setDescription] = useState("");
 
 
 
-    const handleImageChange = (e) => {
+    const handleImageChange = (
+      e: React.ChangeEvent<HTMLInputElement>
+    ) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
@@ -34,7 +55,12 @@ export default function AddKategori({ isOpen, onClose, mode = "tambah", data, on
     useEffect(() => {
     if (mode === "edit" && data) {
         setNama(data.title);
-        setHarga(data.price);
+        setMaxPerson(data.max_person || "");
+
+        setHargaSelf(data.price_self || "");
+        setHargaCouple(data.price_couple || "");
+        setHargaGroup(data.price_group || "");
+        setHargaFamily(data.price_family || "");
         setWaktu(data.duration);
         setDescription(data.description);
         setImagePreview(`http://127.0.0.1:8000${data.image}`);
@@ -44,7 +70,12 @@ export default function AddKategori({ isOpen, onClose, mode = "tambah", data, on
     useEffect(() => {
     if (!isOpen) {
         setNama("");
-        setHarga("");
+        setMaxPerson("");
+
+        setHargaSelf("");
+        setHargaCouple("");
+        setHargaGroup("");
+        setHargaFamily("");
         setWaktu("");
         setDescription("");
         setImagePreview(null);
@@ -53,8 +84,6 @@ export default function AddKategori({ isOpen, onClose, mode = "tambah", data, on
     }, [isOpen]);
 
   if (!isOpen) return null;
-
-    
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -113,19 +142,71 @@ export default function AddKategori({ isOpen, onClose, mode = "tambah", data, on
           </div>
 
           <div className="flex gap-3">
-            <input 
-            value={harga || ""}
-            onChange={(e) => setHarga(e.target.value)}
-            placeholder="Harga"
-            className="w-full p-2 placeholder:text-black/20 placeholder:italic placeholder:text-sm text-[#002381] rounded-lg bg-[#AFCBFF] shadow-md outline-none"
+
+            <input
+              value={maxPerson}
+              onChange={(e) => setMaxPerson(e.target.value)}
+              placeholder="Maksimal Orang"
+              className="
+                w-full
+                p-2
+                placeholder:text-black/20
+                text-[#002381]
+                rounded-lg
+                bg-[#AFCBFF]
+                shadow-md
+                outline-none
+              "
             />
 
-            <input 
-            value={waktu || ""}
-            onChange={(e) => setWaktu(e.target.value)}
-            placeholder="Waktu"
-            className="w-full p-2 placeholder:text-black/20 placeholder:italic placeholder:text-sm text-[#002381] rounded-lg bg-[#AFCBFF] shadow-md outline-none"
+            <input
+              value={waktu || ""}
+              onChange={(e) => setWaktu(e.target.value)}
+              placeholder="Durasi (menit)"
+              className="
+                w-full
+                p-2
+                placeholder:text-black/20
+                text-[#002381]
+                rounded-lg
+                bg-[#AFCBFF]
+                shadow-md
+                outline-none
+              "
             />
+
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+
+            <input
+              value={hargaSelf}
+              onChange={(e) => setHargaSelf(e.target.value)}
+              placeholder="Harga Self"
+              className="w-full p-2 rounded-lg bg-[#AFCBFF] shadow-md outline-none"
+            />
+
+            <input
+              value={hargaCouple}
+              onChange={(e) => setHargaCouple(e.target.value)}
+              placeholder="Harga Couple"
+              className="w-full p-2 rounded-lg bg-[#AFCBFF] shadow-md outline-none"
+            />
+
+            <input
+              value={hargaGroup}
+              onChange={(e) => setHargaGroup(e.target.value)}
+              placeholder="Harga Group"
+              className="w-full p-2 rounded-lg bg-[#AFCBFF] shadow-md outline-none"
+            />
+
+            <input
+              value={hargaFamily}
+              onChange={(e) => setHargaFamily(e.target.value)}
+              placeholder="Harga Family"
+              className="w-full p-2 rounded-lg bg-[#AFCBFF] shadow-md outline-none"
+            />
+
           </div>
 
           <textarea 
@@ -156,7 +237,30 @@ export default function AddKategori({ isOpen, onClose, mode = "tambah", data, on
 
               formData.append("title", nama);
               formData.append("description", description);
-              formData.append("price", Number(harga).toString());
+              formData.append(
+                  "max_person",
+                  maxPerson
+                );
+
+                formData.append(
+                  "price_self",
+                  hargaSelf
+                );
+
+                formData.append(
+                  "price_couple",
+                  hargaCouple
+                );
+
+                formData.append(
+                  "price_group",
+                  hargaGroup
+                );
+
+                formData.append(
+                  "price_family",
+                  hargaFamily
+                );
               formData.append("duration", waktu);
 
               if (imageFile) {

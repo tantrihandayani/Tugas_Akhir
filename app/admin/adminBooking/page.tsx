@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { BookingType } from "@/type/bookingType";
 import AddBooking from '@/component/addBooking'
+import { BookingStatus } from "@/type/bookingType";
 
 
 const AdminBooking = () => {
@@ -16,32 +17,43 @@ const [showSucces, setShowSucces] = useState(false);
 const [searchTanggal, setSearchTanggal] = useState('');
 const [bookingList, setBookingList] = useState<BookingType[]>([]);
 const [selectedBooking, setSelectedBooking] = useState<BookingType | null>(null);
+const [driveLink, setDriveLink] = useState("");
+const [savingDrive, setSavingDrive] = useState(false);
 
-  const handleUpdateStatus = async (newStatus: string) => {
-    if (!selectedBooking) return;
-    await fetch(
-      `http://127.0.0.1:8000/api/booking/${selectedBooking.id}/`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+  const handleUpdateStatus = async (
+      newStatus: BookingStatus
+  ) => {
+      await updateBooking({
           booking_status: newStatus,
-        }),
-      }
-    );
-    const updated = bookingList.map((item) =>
-      item.id === selectedBooking.id
-        ? { ...item, status: newStatus }
-        : item
-    );
-    setBookingList(updated);
-    setSelectedBooking({
-      ...selectedBooking,
-      status: newStatus,
-    });
+      });
+      setSelectedBooking(null);
   };
+
+  const updateBooking = async (data: Partial<BookingType>) => {
+    if (!selectedBooking) return;
+
+    try {
+        const res = await fetch(
+            `http://127.0.0.1:8000/api/booking/${selectedBooking.id}/`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            }
+        );
+
+        if (!res.ok) {
+            throw new Error("Gagal memperbarui booking.");
+        }
+
+        await refreshBooking();
+    } catch (err) {
+        console.error(err);
+    }
+  };
+  
   
   const formatTimeRange = (jam?: string) => {
   if (!jam) return "-";
@@ -66,14 +78,17 @@ useEffect(() => {
 
       const normalized = data.map((item: any) => ({
         id: item.id,
-        customer_name: item.nama,
+        nama: item.nama,
         nomor_hp: item.nomor_hp,
         date: item.date,
         time: item.time,
         package_name: item.package_name,
+        kategori: item.kategori,
         payment_method: item.payment_method,
         deskripsi: item.deskripsi,
-        status: item.booking_status,
+        harga: item.harga,
+        drive_link: item.drive_link,
+        booking_status: item.booking_status,
       }));
 
       setBookingList(normalized);
@@ -108,23 +123,45 @@ const refreshBooking = async () => {
     const updated = await refresh.json();
 
       const normalized = updated.map((item: any) => ({
-        id: item.id,
-        customer_name: item.nama,
-        nomor_hp: item.nomor_hp,
-        date: item.date,
-        time: item.time,
-        package_name: item.package_name,
-        payment_method: item.payment_method,
-        deskripsi: item.deskripsi,
-        status: item.booking_status,
+          id: item.id,
+          customer_name: item.nama,
+          nomor_hp: item.nomor_hp,
+          date: item.date,
+          time: item.time,
+          package_name: item.package_name,
+          kategori: item.kategori,
+          payment_method: item.payment_method,
+          deskripsi: item.deskripsi,
+          harga: item.harga,
+          drive_link: item.drive_link,
+          booking_status: item.booking_status,
       }));
 
       setBookingList(normalized);
-      setShowSucces(true);
     } catch (err) {
       console.error(err);
     }
   };
+
+const handleSaveDriveLink = async () => {
+    if (!selectedBooking) return;
+
+    setSavingDrive(true);
+
+    try {
+        await updateBooking({
+            drive_link: driveLink,
+        });
+
+        alert("✅ Link Google Drive berhasil disimpan.");
+        setSelectedBooking(null);
+    } catch (err) {
+        alert("❌ Gagal menyimpan link.");
+        console.error(err);
+    } finally {
+        setSavingDrive(false);
+    }
+};
 
   return (
     <div className='w-full min-h-screen flex bg-white'>
@@ -180,7 +217,7 @@ const refreshBooking = async () => {
                     : `Booking ${date} :`}
                 </h1>
 
-                <div className='flex flex-col gap-4 w-full'>
+                <div className='flex flex-col gap-4 w-full px-3'>
                   {bookingList
                     .filter(item => item.date === date)
                     .sort((a, b) => {
@@ -195,16 +232,17 @@ const refreshBooking = async () => {
                         onClick={() => {
                           console.log(item); 
                           setSelectedBooking(item);
+                          setDriveLink(item.drive_link || "");
                         }}
                       >
                       <Booking
                         
                         date={item.date}
-                        customer_name={item.customer_name}
+                        nama={item.nama}
                         id={item.id}
                         package_name={item.package_name}
                         payment_method={item.payment_method} 
-                        status={item.status}
+                        booking_status={item.booking_status}
                         time={formatTimeRange(item.time)}
                         className="w-full"
                       />
@@ -268,12 +306,12 @@ const refreshBooking = async () => {
 
         {selectedBooking && (
           <div 
-            className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]"
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
             onClick={() => setSelectedBooking(null)}
           >
             <div 
               onClick={(e) => e.stopPropagation()}
-              className="bg-white w-[95%] max-w-2xl rounded-2xl p-4 md:p-6 relative shadow-xl"
+              className="relative w-[92%] max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl"
             >
               <button
                 onClick={() => setSelectedBooking(null)}
@@ -287,86 +325,198 @@ const refreshBooking = async () => {
                 />
               </button>
 
-              {/* KANAN */}
-              <div className="flex flex-col justify-between">
+              <div className="flex flex-col">
 
-                {/* HEADER */}
-                <div>
-                  <div className="flex justify-between items-start">
+    {/* HEADER */}
+<div className="relative flex items-center justify-between bg-gradient-to-r from-[#2A4AA1] to-[#4167d8] px-5 py-3">
+
+    <button
+        onClick={() => setSelectedBooking(null)}
+        className="absolute right-1 top-1 rounded-full bg-white/20 p-1.5 transition hover:bg-white/30"
+    >
+        <Image
+            src="/assets/image/close.png"
+            width={14}
+            height={14}
+            alt="close"
+        />
+    </button>
+
+    <div className="pr-12">
+        <div className="flex items-center gap-2">
+
+            <h2 className="text-lg font-bold text-white">
+                {selectedBooking.nama}
+            </h2>
+
+            <span className="rounded-md bg-white/15 px-2 py-0.5 text-[10px] font-semibold text-white">
+                #{selectedBooking.id}
+            </span>
+
+        </div>
+
+        <p className="mt-0.5 text-[11px] text-blue-100">
+            {selectedBooking.package_name}
+            {selectedBooking.kategori && ` • ${selectedBooking.kategori}`}
+            {" • "}
+            {selectedBooking.payment_method.toUpperCase()}
+        </p>
+    </div>
+
+    <span
+        className={`rounded-full  px-3 py-1 text-[10px] font-bold uppercase tracking-wide
+        ${
+            selectedBooking.booking_status === "waiting"
+                ? "bg-yellow-400 text-yellow-900"
+                : selectedBooking.booking_status === "progress"
+                ? "bg-orange-400 text-white"
+                : "bg-green-400 text-white"
+        }`}
+    >
+        {selectedBooking.booking_status}
+    </span>
+
+</div>
+
+    {/* CONTENT */}
+    <div className="space-y-4 p-5">
+        {/* GRID */}
+        <div className="grid gap-3 md:grid-cols-2">
+            {/* CUSTOMER */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div className="mb-3 flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2A4AA1]/10">
+                        👤
+                    </div>
+
                     <div>
-                      <h2 className="text-xl font-bold text-[#2A4AA1]">
-                        {selectedBooking.customer_name}
-                      </h2>
-                      <p className="text-[#2A4AA1] text-sm">
-                        {selectedBooking.payment_method}
-                      </p>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#2A4AA1]">
+                            Customer
+                        </p>
                     </div>
+                </div>
 
-                    {/* STATUS */}
-                    <div className={`px-3 py-1 mr-4 rounded-lg text-white text-sm
-                     ${selectedBooking.status === 'waiting' ? 'bg-yellow-500' : ''}
-                     ${selectedBooking.status === 'progress' ? 'bg-orange-500' : ''}
-                     ${selectedBooking.status === 'finished' ? 'bg-green-500' : ''}
-                    `}>
-                      {selectedBooking.status}
-                    </div>
-                  </div>
-
-                  <hr className="my-4 border-dashed border-[#2A4AA1]" />
-
-                  {/* DETAIL */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 text-[#2A4AA1] text-sm mt-4">
-
-                    <p className="font-semibold">ID Booking :</p>
-                    <p>#{selectedBooking.id}</p>
-
-                    <p className="font-semibold">Nama :</p>
-                    <p>{selectedBooking.customer_name}</p>
-
-                    <p className="font-semibold">Nomor HP :</p>
-                    <p>{selectedBooking.nomor_hp || '-'}</p>
-
-                    <p className="font-semibold">Tanggal :</p>
-                    <p>{selectedBooking.date}</p>
-
-                    <p className="font-semibold">Jam :</p>
-                    <p>{formatTimeRange(selectedBooking.time)}</p>
-
-                    <p className="font-semibold">Paket :</p>
-                    <p>{selectedBooking.package_name}</p>
-
-                    <p className="font-semibold">Pembayaran :</p>
-                    <p>{selectedBooking.payment_method}</p>
-
-                    <p className="font-semibold">Deskripsi :</p>
-                    <p className="break-words whitespace-pre-wrap">
-                      {selectedBooking.deskripsi || '-'}
+                <div className="space-y-1">
+                    <p className="text-sm font-bold text-slate-800">
+                        {selectedBooking.nama}
                     </p>
-                  </div>
+                    <p className="text-xs text-slate-500">
+                        {selectedBooking.nomor_hp || "-"}
+                    </p>
+                    <span className="inline-flex rounded-md bg-blue-100 px-2 py-1 text-[10px] font-semibold uppercase text-[#2A4AA1]">
+                        {selectedBooking.payment_method}
+                    </span>
+                </div>
+            </div>  
+
+        {/* BOOKING */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2A4AA1]/10">
+                    📅
+                </div>
+
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#2A4AA1]">
+                    Booking
+                </p>
+            </div>
+            <div className="space-y-1">
+                <p className="text-sm font-bold text-slate-800">
+                    {selectedBooking.package_name}
+                </p>
+
+                <p className="text-xs text-slate-500">
+                    {selectedBooking.date}
+                </p>
+
+                <p className="text-xs text-slate-500">
+                    {formatTimeRange(selectedBooking.time)}
+                </p>
+            </div>
+        </div>
+</div>
+
+        {/* DESKRIPSI */}
+        <div className="rounded-xl border border-slate-200 p-3">
+            <h3 className="mb-3 font-bold text-[#2A4AA1]">
+                📝 Catatan Booking
+            </h3>
+
+            <p className="text-xs leading-6 text-slate-600">
+                {selectedBooking.deskripsi ||
+                    "Tidak ada catatan dari customer."}
+            </p>
+        </div>
+
+        {/* GOOGLE DRIVE */}
+        <div className="rounded-xl border border-slate-200 p-3">
+            <h3 className="mb-2 text-sm font-bold text-[#2A4AA1]">
+                ☁️ Google Drive Hasil Foto
+            </h3>
+            {selectedBooking.booking_status === "finished" ? (
+                <div className="flex flex-row gap-2 space-y-3">
+                    <input
+                        type="text"
+                        value={driveLink}
+                        onChange={(e) => setDriveLink(e.target.value)}
+                        placeholder="Tempel link Google Drive..."
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none transition focus:border-[#2A4AA1]"
+                    />
+
+                    <button
+                    onClick={handleSaveDriveLink}
+                    className="rounded-lg bg-[#2A4AA1] px-4 h-8 text-xs font-semibold text-white transition hover:bg-[#1d3c91]"
+                    >
+                        Simpan
+                    </button>
+                </div>
+            ) : (
+                <div className="rounded-lg bg-slate-50 px-3 py-3 text-xs text-slate-500">
+                    Booking harus berstatus
+                    <span className="font-semibold text-green-600">
+                        {" "}Selesai
+                    </span>
+                    {" "}agar link Google Drive dapat ditambahkan.
+                </div>
+            )}
+        </div>
 
                 {/* BUTTON */}
-                <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
-                  <button
-                    onClick={() => handleUpdateStatus("progress")}
-                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg"
-                  >
-                    Start
-                  </button>
+                <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-slate-200 px-5 py-4">
+                {selectedBooking.booking_status === "waiting" && (
+                    <button
+                        onClick={() => handleUpdateStatus("progress")}
+                        className="rounded-lg bg-yellow-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-yellow-600"
+                    >
+                        ▶ Mulai Sesi
+                    </button>
+                )}
 
-                  <button
-                    onClick={() => handleUpdateStatus("finished")}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg"
-                  >
-                    Finish
-                  </button>
+                {selectedBooking.booking_status === "progress" && (
+                    <button
+                        onClick={() => handleUpdateStatus("finished")}
+                        className="rounded-lg bg-green-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-green-700"
+                    >
+                        ✔ Selesaikan Booking
+                    </button>
+                )}
+
+                {selectedBooking.booking_status === "finished" && (
+                    <button
+                        onClick={handleSaveDriveLink}
+                        disabled={savingDrive}
+                        className="rounded-lg bg-[#2A4AA1] px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                    >
+                        {savingDrive ? "Menyimpan..." : "💾 Simpan Link"}
+                    </button>
+                )}
                 </div>
               </div>
             </div>
           </div>
           </div>
         )}
-    </div>
-    
+    </div>    
   )
 }
 

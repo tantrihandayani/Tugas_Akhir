@@ -52,46 +52,24 @@ export default function LoginRequiredModal({
         <div className="flex gap-4">
 
           <button
-            onClick={() => router.push("/login")}
-            className="
-              flex-1
-              h-12
-              bg-[#002381]
-              text-white
-              font-black
-              rounded-2xl
-              border-4
-              border-black
-              shadow-[4px_4px_0px_0px_#000]
-              hover:translate-x-1
-              hover:translate-y-1
-              hover:shadow-none
-              transition-all
-            "
-          >
-            LOGIN
-          </button>
+  onClick={() => {
+    onClose();
+    router.push("/login");
+  }}
+  className="flex-1 h-12 bg-[#002381] text-white font-black rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+>
+  LOGIN
+</button>
 
-          <button
-            onClick={() => router.push("/register")}
-            className="
-              flex-1
-              h-12
-              bg-yellow-300
-              text-black
-              font-black
-              rounded-2xl
-              border-4
-              border-black
-              shadow-[4px_4px_0px_0px_#000]
-              hover:translate-x-1
-              hover:translate-y-1
-              hover:shadow-none
-              transition-all
-            "
-          >
-            REGISTER
-          </button>
+<button
+  onClick={() => {
+    onClose();
+    router.push("/register");
+  }}
+  className="flex-1 h-12 bg-yellow-300 text-black font-black rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+>
+  REGISTER
+</button>
 
         </div>
 

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from "next/navigation";
+import {saveToken, saveRole, saveRefreshToken, saveUser,} from "@/lib/auth/auth";
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -26,6 +27,13 @@ export default function AdminLogin() {
       const data = await res.json();
 
       if (res.ok) {
+        saveToken(data.access);
+        saveRefreshToken(data.refresh);
+        saveRole(data.role);
+        saveUser({
+          username: data.username,
+          role: data.role,
+        });
         alert("Login berhasil");
         router.push("/admin/adminHome");
       } else {

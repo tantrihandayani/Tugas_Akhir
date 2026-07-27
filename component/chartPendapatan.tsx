@@ -31,7 +31,7 @@ const formatRupiah = (value: number) => {
 
 const ChartPendapatan = ({ data }: Props) => {
   return (
-    <div className="w-full h-[500px] bg-white rounded-3xl p-6 shadow-lg">
+    <div className="w-full h-[500px] bg-white rounded-3xl p-6 shadow-lg"> 
       <h1 className="text-3xl font-bold text-slate-800 mb-2">
         Laporan Pendapatan
       </h1>
@@ -49,7 +49,7 @@ const ChartPendapatan = ({ data }: Props) => {
           <YAxis tickFormatter={(value) => `Rp ${value / 1000}k`} />
 
           <Tooltip
-            formatter={(value: number) => formatRupiah(value)}
+            formatter={(value) => formatRupiah(Number(value))}
           />
 
           <Bar

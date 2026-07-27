@@ -3,7 +3,9 @@ import HeroSection from "@/component/public/heroSection";
 import InformasiStudio from "@/component/public/informasiStudio";
 import JadwalTersedia from "@/component/public/jadwalTersedia";
 import LayananCard from "@/component/public/layananCard";
+import StudioMoments from "@/component/public/studioMoments";
 import NavbarPublic from "@/component/public/navbarPublic";
+import HowItWorks from "@/component/public/HowItWorks";
 
 
 export default function HomePage() {
@@ -13,6 +15,10 @@ export default function HomePage() {
       <NavbarPublic />
 
       <HeroSection />
+
+      <HowItWorks />
+
+      <StudioMoments />
       
       <LayananCard />
       
