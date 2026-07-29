@@ -7,6 +7,9 @@ import {
   FiArrowRight,
 } from "react-icons/fi";
 
+
+
+
 export default function Footer() {
   return (
     <footer className="w-full border-t-[3px] border-black bg-[#C6B6FF] px-4 py-5 md:px-8 md:py-7">
@@ -178,14 +181,6 @@ export default function Footer() {
               />
 
             </div>
-
-            <Link
-              href="/booking"
-              className="mt-4 inline-flex items-center justify-center gap-2 rounded-2xl border-[3px] border-black bg-[#002381] px-5 py-3 text-sm font-black text-white shadow-[4px_4px_0px_0px_#000] transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
-            >
-              Booking Sekarang
-              <FiArrowRight />
-            </Link>
 
           </div>
 
