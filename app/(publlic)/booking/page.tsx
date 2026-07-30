@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import LoginRequiredModal from "@/component/modal/loginRequiredModal";
 import { getToken } from "@/lib/auth/auth";
 import { FiArrowLeft } from "react-icons/fi";
+import { Suspense, useEffect, useState } from "react";
 
 type Layanan = {
   id: number;
@@ -18,13 +18,12 @@ type Layanan = {
   price_family: string;
 };
 
-export default function BookingPage() {
-
+function BookingContent() {
+  const searchParams = useSearchParams();
   const [layanan, setLayanan] = useState<Layanan[]>([]);
   const [showQris, setShowQris] = useState(false);
   const [buktiPembayaran, setBuktiPembayaran] = useState<File | null>(null);
   const [jamTerpakai, setJamTerpakai] = useState<string[]>([]);
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [openLoginModal, setOpenLoginModal] = useState(false);
 
@@ -590,4 +589,20 @@ export default function BookingPage() {
   </div>
 
   );
+  // pindahkan SEMUA isi BookingPage ke sini
+  // mulai dari useState, useEffect, handleSubmit,
+  // sampai return JSX
 }
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BookingContent />
+    </Suspense>
+  );
+}
+
+// export default function BookingPage() {
+
+  
+// }

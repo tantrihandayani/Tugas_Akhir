@@ -198,10 +198,10 @@ export default function LayananCard() {
           Mulai Rp{" "}
           {Number(
             Math.min(
-              item.price_self,
-              item.price_couple,
-              item.price_group,
-              item.price_family
+              Number(item.price_self),
+              Number(item.price_couple),
+              Number(item.price_group),
+              Number(item.price_family)
             )
           ).toLocaleString("id-ID")}
         </div>
