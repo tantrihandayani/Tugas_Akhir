@@ -39,7 +39,7 @@ export default function CustomerLogin() {
 
         alert("Login berhasil");
 
-        if (data.role === "admin") {
+        if (data.is_staff === true) {
           router.push("/admin/adminHome");
         } else {
           router.push("/");
