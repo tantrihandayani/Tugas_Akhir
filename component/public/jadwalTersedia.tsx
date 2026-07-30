@@ -88,7 +88,7 @@ const getTodayLocal = () => {
 
   useEffect(() => {
 
-    fetch("http://127.0.0.1:8000/api/booking/")
+    fetch("https://web-production-71d3b8.up.railway.app/api//booking/")
       .then((res) => res.json())
       .then((data) => setBooking(data))
       .catch((err) => console.error(err));

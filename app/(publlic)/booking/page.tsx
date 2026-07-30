@@ -50,7 +50,7 @@ function BookingContent() {
 
   useEffect(() => {
 
-    fetch("http://127.0.0.1:8000/api/layanan/")
+    fetch("https://web-production-71d3b8.up.railway.app/api//layanan/")
       .then((res) => res.json())
       .then((data) => setLayanan(data));
 
@@ -68,7 +68,7 @@ function BookingContent() {
   useEffect(() => {
   if (!form.date) return;
 
-  fetch("http://127.0.0.1:8000/api/booking/")
+  fetch("https://web-production-71d3b8.up.railway.app/api//booking/")
     .then((res) => res.json())
     .then((data) => {
       const bookedTimes = data
@@ -146,7 +146,7 @@ function BookingContent() {
 
       console.log(getToken());
       const res = await fetch(
-        "http://127.0.0.1:8000/api/booking/",
+        "https://web-production-71d3b8.up.railway.app/api//booking/",
         {
           method: "POST",
 

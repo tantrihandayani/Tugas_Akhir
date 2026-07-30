@@ -74,13 +74,13 @@ const [dashboard, setDashboard] = React.useState<Dashboard>({
 
 
   React.useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/dashboard/")
+    fetch("https://web-production-71d3b8.up.railway.app/api//dashboard/")
       .then((res) => res.json())
       .then((data) => setDashboard(data));
   }, []);
 
   React.useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/laporan/")
+    fetch("https://web-production-71d3b8.up.railway.app/api//laporan/")
       .then((res) => res.json())
       .then((data) => {
 
@@ -106,7 +106,7 @@ const todayBookings = bookingList.filter(
 
 
 React.useEffect(() => {
-  fetch("http://127.0.0.1:8000/api/booking/")
+  fetch("https://web-production-71d3b8.up.railway.app/api//booking/")
     .then(res => res.json())
     .then(data => setBookingList(data))
     .catch(err => console.error(err));

@@ -1,6 +1,6 @@
 import { getToken } from "./auth/auth";
 
-// const BASE_URL = "http://127.0.0.1:8000/api";
+// const BASE_URL = "https://web-production-71d3b8.up.railway.app/api/";
 const BASE_URL = "https://web-production-71d3b8.up.railway.app/api/";
 
 export async function apiFetch(

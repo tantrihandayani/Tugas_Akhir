@@ -21,7 +21,7 @@ export default function HeroSection() {
     if (token) {
       setIsLogin(true);
 
-      fetch("http://127.0.0.1:8000/api/profile/", {
+      fetch("https://web-production-71d3b8.up.railway.app/api//profile/", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

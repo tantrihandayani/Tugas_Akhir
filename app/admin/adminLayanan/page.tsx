@@ -19,7 +19,7 @@
     const [dataLayanan, setDataLayanan] = useState<Layanan[]>([]);
 
     useEffect(() => {
-      fetch("http://127.0.0.1:8000/api/layanan/")
+      fetch("https://web-production-71d3b8.up.railway.app/api//layanan/")
         .then((res) => res.json())
         .then((data) => {
           setDataLayanan(data);
@@ -32,7 +32,7 @@
         console.log(pair[0], pair[1]);
       }
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/layanan/", {
+        const res = await fetch("https://web-production-71d3b8.up.railway.app/api//layanan/", {
           method: "POST",
           body: formData,
         });
@@ -47,7 +47,7 @@
   const handleUpdate = async (formData: FormData) => {
     const id = selectedData?.id;
     const res = await fetch(
-      `http://127.0.0.1:8000/api/layanan/${id}/`,
+      `https://web-production-71d3b8.up.railway.app/api//layanan/${id}/`,
       {
         method: "PUT",
         body: formData,
@@ -67,7 +67,7 @@
   };
 
   const confirmDelete = async () => {
-    await fetch(`http://127.0.0.1:8000/api/layanan/${selectedId}/`, {
+    await fetch(`https://web-production-71d3b8.up.railway.app/api//layanan/${selectedId}/`, {
       method: "DELETE",
     });
 

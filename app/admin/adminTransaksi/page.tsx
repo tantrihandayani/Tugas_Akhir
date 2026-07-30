@@ -61,7 +61,7 @@ const page = () => {
 
   const fetchTransaksi = async () => {
   try {
-    const res = await fetch("http://127.0.0.1:8000/api/transaksi/");
+    const res = await fetch("https://web-production-71d3b8.up.railway.app/api//transaksi/");
     const data = await res.json();
 
     const normalized = data.map((item: any) => ({
@@ -115,7 +115,7 @@ useEffect(() => {
 
   try {
     await fetch(
-      `http://127.0.0.1:8000/api/booking/${selectedData.id}/`,
+      `https://web-production-71d3b8.up.railway.app/api//booking/${selectedData.id}/`,
       {
         method: "PATCH",
         headers: {
@@ -140,7 +140,7 @@ const handleTolak = async () => {
 
   try {
     await fetch(
-      `http://127.0.0.1:8000/api/booking/${selectedData.id}/`,
+      `https://web-production-71d3b8.up.railway.app/api//booking/${selectedData.id}/`,
       {
         method: "PATCH",
         headers: {

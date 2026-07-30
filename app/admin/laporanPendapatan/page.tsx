@@ -43,7 +43,7 @@ const page = () => {
 const fetchLaporan = async () => {
   setLoading(true);
 
-  let url = "http://127.0.0.1:8000/api/laporan/";
+  let url = "https://web-production-71d3b8.up.railway.app/api//laporan/";
 
   if (filterType === "day") {
     url += `?type=day&date=${selectedDate}`;

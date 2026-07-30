@@ -67,7 +67,7 @@ export default function ProfilePage() {
     try {
       const token = getToken();
       const res = await fetch(
-        "http://127.0.0.1:8000/api/profile/statistic/",
+        "https://web-production-71d3b8.up.railway.app/api//profile/statistic/",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -90,7 +90,7 @@ const handleUpdateProfile = async () => {
     }
     const token = getToken();
 
-    const res = await fetch("http://127.0.0.1:8000/api/profile/", {
+    const res = await fetch("https://web-production-71d3b8.up.railway.app/api//profile/", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -138,7 +138,7 @@ const handleChangePassword = async () => {
     const token = getToken();
 
     const res = await fetch(
-      "http://127.0.0.1:8000/api/profile/password/",
+      "https://web-production-71d3b8.up.railway.app/api//profile/password/",
       {
         method: "PATCH",
         headers: {
@@ -194,7 +194,7 @@ const handleOpenEdit = () => {
     try {
       const token = getToken();
       const res = await fetch(
-        "http://127.0.0.1:8000/api/profile/",
+        "https://web-production-71d3b8.up.railway.app/api//profile/",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -213,7 +213,7 @@ const getHistory = async () => {
   try {
     const token = getToken();
     const res = await fetch(
-      "http://127.0.0.1:8000/api/profile/history/",
+      "https://web-production-71d3b8.up.railway.app/api//profile/history/",
       {
         headers: {
           Authorization: `Bearer ${token}`,

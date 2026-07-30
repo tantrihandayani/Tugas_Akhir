@@ -34,7 +34,7 @@ const [savingDrive, setSavingDrive] = useState(false);
 
     try {
         const res = await fetch(
-            `http://127.0.0.1:8000/api/booking/${selectedBooking.id}/`,
+            `https://web-production-71d3b8.up.railway.app/api//booking/${selectedBooking.id}/`,
             {
                 method: "PATCH",
                 headers: {
@@ -72,7 +72,7 @@ const [savingDrive, setSavingDrive] = useState(false);
 }; 
 
 useEffect(() => {
-  fetch("http://127.0.0.1:8000/api/booking/")
+  fetch("https://web-production-71d3b8.up.railway.app/api//booking/")
     .then((res) => res.json())
     .then((data) => {
 
@@ -117,7 +117,7 @@ const uniqueDates = [
 const refreshBooking = async () => {
   try {
     const refresh = await fetch(
-      "http://127.0.0.1:8000/api/booking/"
+      "https://web-production-71d3b8.up.railway.app/api//booking/"
     );
 
     const updated = await refresh.json();
