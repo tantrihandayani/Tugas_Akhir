@@ -25,7 +25,7 @@ export default function LayananCard() {
 
     try {
 
-      const res = await fetch("https://web-production-71d3b8.up.railway.app/api//layanan/");
+      const res = await fetch("https://web-production-71d3b8.up.railway.app/api/layanan/");
       const data = await res.json();
 
       setLayanan(data);

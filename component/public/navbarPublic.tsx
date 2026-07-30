@@ -20,7 +20,7 @@ export default function NavbarPublic() {
     if (token) {
       setIsLogin(true);
       fetch(
-        "https://web-production-71d3b8.up.railway.app/api//profile/",
+        "https://web-production-71d3b8.up.railway.app/api/profile/",
         {
           headers: {
             Authorization: `Bearer ${token}`,

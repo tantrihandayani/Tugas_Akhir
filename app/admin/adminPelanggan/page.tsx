@@ -25,7 +25,7 @@ const page = () => {
     try {
         const token = getToken();
 
-        const res = await fetch("https://web-production-71d3b8.up.railway.app/api//customer/", {
+        const res = await fetch("https://web-production-71d3b8.up.railway.app/api/customer/", {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

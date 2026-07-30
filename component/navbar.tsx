@@ -43,7 +43,7 @@ export default function Navbar() {
     useEffect(() => {
     const fetchSummary = async () => {
         try {
-            const res = await fetch("https://web-production-71d3b8.up.railway.app/api//dashboard/");
+            const res = await fetch("https://web-production-71d3b8.up.railway.app/api/dashboard/");
             const data = await res.json();
             console.log("booking_waiting:", data.booking_waiting);
             console.log("transaksi_pending:", data.transaksi_pending);

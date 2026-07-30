@@ -98,7 +98,7 @@ const jamList = [
 const getLayanan = async () => {
     try {
         const res = await fetch(
-            "https://web-production-71d3b8.up.railway.app/api//layanan/"
+            "https://web-production-71d3b8.up.railway.app/api/layanan/"
         );
 
         const data = await res.json();
@@ -215,7 +215,7 @@ const newBooking = {
 console.log("DATA DIKIRIM:", newBooking);
 try {
   const res = await fetch(
-    "https://web-production-71d3b8.up.railway.app/api//booking/",
+    "https://web-production-71d3b8.up.railway.app/api/booking/",
     {
       method: "POST",
       headers: {

@@ -13,7 +13,7 @@ export default function AdminLogin() {
 
   const handleLogin = async () => {
     try {
-      const res = await fetch("https://web-production-71d3b8.up.railway.app/api//login/", {
+      const res = await fetch("https://web-production-71d3b8.up.railway.app/api/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
