@@ -63,7 +63,13 @@ export default function AddKategori({
         setHargaFamily(data.price_family || "");
         setWaktu(data.duration);
         setDescription(data.description);
-        setImagePreview(`http://127.0.0.1:8000${data.image}`);
+        setImagePreview(
+          data.image
+            ? data.image.startsWith("http")
+              ? data.image
+              : `${API_URL}${data.image}`
+            : null
+        );
     }
     }, [data, mode]);
 
@@ -84,6 +90,8 @@ export default function AddKategori({
     }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

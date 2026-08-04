@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react'
 import BarTransaksi from '@/component/barTransaksi';
 import { Transaksi } from "@/type/transaksiType";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const page = () => {
 
   const [transaksiList, setTransaksiList] = useState<Transaksi[]>([]);
@@ -72,8 +74,10 @@ const page = () => {
       waktu: item.time ? `${item.time.slice(0, 5)} WIB` : "-",
       metode: item.payment_method === "qris" ? "QRIS" : "Tunai",
       bukti: item.bukti_pembayaran
-        ? `http://127.0.0.1:8000/media/${item.bukti_pembayaran}`
-        : null,
+      ? item.bukti_pembayaran.startsWith("http")
+        ? item.bukti_pembayaran
+        : `${API_URL}${item.bukti_pembayaran}`
+      : null,
       harga: item.harga || "-",
       nomor_hp: item.nomor_hp,
       payment_status: item.payment_status,

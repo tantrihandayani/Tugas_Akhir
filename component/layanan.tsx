@@ -36,6 +36,8 @@ export default function Card({
   onDelete,
 }: CardProps)
 {
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
   return (
     <div className='relative flex flex-col px-3 bg-white w-55 h-75 rounded-lg'>
 
@@ -67,14 +69,17 @@ export default function Card({
 
       {/* IMAGE */}
       <div className='flex flex-col py-3 gap-2 items-center'>
+        
         <img
           src={
             image
-              ? `http://127.0.0.1:8000${image}`
+              ? image.startsWith("http")
+                ? image
+                : `${API_URL}${image}`
               : "/assets/image/default.png"
           }
-          className='w-45 h-30 rounded-lg object-cover'
-          alt='img'
+          className="w-45 h-30 rounded-lg object-cover"
+          alt="img"
         />
         <h1 className='font-extrabold text-[13px] text-[#002381] underline'>
           {title}
@@ -84,7 +89,6 @@ export default function Card({
       {/* PRICE */}
       <div className=" space-y-1 text-[#002381]">
         <div className="flex justify-between text-xs font-bold">
-          <span>Maks {max_person} Orang</span>
           <span>{duration} Menit</span>
         </div>
 
